@@ -6,6 +6,5 @@ fn main() {
             .nth(1)
             .expect("Expected path to local media as argument, found nil.")
     );
-
     offflix::media_player::run(path);
 }
