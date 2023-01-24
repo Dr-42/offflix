@@ -1,12 +1,19 @@
 use std::{
-    env,
-    fs::File,
-    io::{Read, Seek, SeekFrom},
-    mem, thread,
-    time::Duration,
+    env, fs::File, io::{Read, Seek, SeekFrom}, mem,
 };
 
-use matroska::{Matroska, Track};
+use keyboard_query::{self, DeviceQuery, DeviceState};
+
+struct MyKeys {
+    esc:u16,
+    f:u16,
+    space:u16,
+    left:u16,
+    right:u16,
+    up:u16,
+    down:u16,
+}
+
 fn main() {
     use libmpv::{protocol::*, *};
 
@@ -30,7 +37,6 @@ fn main() {
     };
 
     let mpv = Mpv::new().unwrap();
-    mpv.set_property("volume", 150).unwrap();
 
     let proto_ctx = mpv.create_protocol_context();
     proto_ctx.register(protocol).unwrap();
@@ -38,15 +44,50 @@ fn main() {
     mpv.playlist_load_files(&[(&path, FileState::AppendPlay, None)])
         .unwrap();
 
-    let subs = mpv.get_property::<String>("sid").unwrap();
-    println!("Subs: {:?}", subs);
-    
+    let mk = MyKeys {
+        esc : 27,
+        f : 70,
+        space : 32,
+        left : 37,
+        right : 39,
+        up : 38,
+        down : 40,
+    };
 
-    thread::sleep(Duration::from_secs(10));
+    handle_window_events(&mpv, &mk);
 
-    mpv.seek_forward(15.).unwrap();
+}
 
-    thread::sleep(Duration::from_secs(5));
+fn handle_window_events(mpv: &libmpv::Mpv, mk: &MyKeys){
+    let device_state = DeviceState::new();
+    let mut prev_keys = vec![];
+    loop{
+        let keys = device_state.get_keys();
+        if keys != prev_keys && keys.len() > 0 {
+            if keys[0] == mk.esc {
+                return;
+            } else if keys[0] == mk.f {
+                mpv.set_property("fullscreen", true).unwrap();
+            } else if keys[0] == mk.space {
+                mpv.pause().unwrap();
+            } else if keys[0] == mk.left {
+                mpv.seek_backward(3.).unwrap();
+            } else if keys[0] == mk.right {
+                mpv.seek_forward(3.).unwrap();
+            } else if keys[0] == mk.up {
+                let mut vol = mpv.get_property::<i64>("volume").unwrap();
+                vol += 5;
+                mpv.set_property("volume", vol).unwrap();
+            } else if keys[0] == mk.down {
+                let mut vol = mpv.get_property::<i64>("volume").unwrap();
+                vol -= 5;
+                mpv.set_property("volume", vol).unwrap();
+            } else {
+                ()
+            }
+        }
+        prev_keys = keys;
+    }
 }
 
 fn open(_: &mut (), uri: &str) -> File {
