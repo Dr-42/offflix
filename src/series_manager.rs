@@ -1,8 +1,10 @@
 use std::fs::*;
 use std::collections::HashMap;
+use serde::{Serialize, Deserialize};
+use serde_json;
 
-#[derive(Debug)]
-pub struct Series {
+#[derive(Debug, Serialize, Deserialize)]
+struct Series {
     series_name: String,
     series_path: String,
     seasons: Vec<Season>,
@@ -23,7 +25,7 @@ impl Series {
         }
     }
 
-    pub fn from_path(path: String) -> Series {
+    fn from_path(path: String) -> Series {
         let series_name = path.split("\\").last().unwrap().to_string();
         let mut seasons: Vec<_> = read_dir(&path).unwrap().map(|r| r.unwrap()).collect();
         seasons.sort_by_key(|dir| dir.file_name().to_str().unwrap().to_string());
@@ -37,11 +39,15 @@ impl Series {
                 let mut episode_number = 1;
                 for episode in episodes {
                     if metadata(episode.path()).unwrap().is_file(){
-                        let episode_name = episode.file_name().to_str().unwrap().to_string();
-                        let episode_path = episode.path().to_str().unwrap().to_string();
-                        let episode = Episode::new(episode_number, episode_name, episode_path);
-                        seas.episodes.push(episode);
-                        episode_number += 1;
+                        if episode.file_name().to_str().unwrap().ends_with(".mkv") ||
+                        episode.file_name().to_str().unwrap().ends_with(".mp4") ||
+                        episode.file_name().to_str().unwrap().ends_with(".avi") {
+                            let episode_name = episode.file_name().to_str().unwrap().to_string();
+                            let episode_path = episode.path().to_str().unwrap().to_string();
+                            let episode = Episode::new(episode_number, episode_name, episode_path);
+                            seas.episodes.push(episode);
+                            episode_number += 1;
+                        }
                     }
                 }
                 seas.season_number = season_num;
@@ -61,7 +67,7 @@ impl Series {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 struct Season {
     season_number: u8,
     path: String,
@@ -78,7 +84,7 @@ impl Season {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 struct Episode {
     episode_number: u8,
     episode_name: String,
@@ -96,9 +102,15 @@ impl Episode {
 }
     
 
-pub fn run(){
-    let series_root = "G:\\Series";
-    let series_name_list = get_series_list(series_root);
+pub fn run(path: String){
+    let series_name_list = get_series_list(&path);
+    for (series_name, series_path) in series_name_list {
+        if series_name == "Friends"{
+        let series = Series::from_path(series_path);
+        let series_json = serde_json::to_string(&series).unwrap();
+        println!("{}", series_json);
+        }
+    }
 }
 
 fn get_series_list(series_root: &str) -> HashMap<String, String> {
