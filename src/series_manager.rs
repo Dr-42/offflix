@@ -4,12 +4,12 @@ use serde::{Serialize, Deserialize};
 use serde_json;
 
 #[derive(Debug, Serialize, Deserialize)]
-struct Series {
-    series_name: String,
-    series_path: String,
+pub struct Series {
+    pub series_name: String,
+    pub series_path: String,
     seasons: Vec<Season>,
-    season_watching: Option<Season>,
-    last_watched: Option<Episode>,
+    season_watching: i64,
+    last_watched: i64,
     time_watched: u32,
 }
 
@@ -19,8 +19,8 @@ impl Series {
             series_name: String::new(),
             series_path: String::new(),
             seasons: Vec::new(),
-            season_watching: None,
-            last_watched: None,
+            season_watching: 0,
+            last_watched: 0,
             time_watched: 0,
         }
     }
@@ -60,11 +60,42 @@ impl Series {
             series_name,
             series_path: path,
             seasons: seases,
-            season_watching: None,
-            last_watched: None,
+            season_watching: 0,
+            last_watched: 0,
             time_watched: 0,
         }
     }
+
+
+    pub fn save_series(&self){
+        let series_json = serde_json::to_string(self).unwrap();
+        //Save the json to series folder
+        let path = self.series_path.clone() + "\\" + self.series_name.as_str() + ".json";
+        std::fs::write(path, series_json).unwrap();
+    }
+
+
+    pub fn verify_series_meta(&self) {
+        let path = self.series_path.clone() + "\\" + self.series_name.as_str() + ".json";
+        if !std::path::Path::new(&path).exists() {
+            self.save_series();
+        } else {
+            let series_json = std::fs::read_to_string(path).unwrap();
+            let series_meta: Series = serde_json::from_str(&series_json).unwrap();
+            if series_meta.seasons.len() != self.seasons.len() {
+                self.save_series();
+            } else {
+                for (season, season_meta) in self.seasons.iter().zip(series_meta.seasons.iter()) {
+                    if season.episodes.len() != season_meta.episodes.len() {
+                        self.save_series();
+                        break;
+                    }
+                }
+            }
+        }
+}
+
+
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -111,6 +142,23 @@ pub fn run(path: String){
         println!("{}", series_json);
         }
     }
+}
+
+pub fn load_series_meta(series_name: String, series_path: String) -> Series {
+    let path = series_path + "\\" + series_name.as_str() + ".json";
+    let series_json = std::fs::read_to_string(path.clone()).unwrap();
+    let series: Series = serde_json::from_str(&series_json).unwrap();
+    let series_load = Series::from_path(path);
+    series_load.verify_series_meta();
+    series
+}
+
+pub fn update_series(series: &mut Series, season: i64, episode:i64, time:u32)-> &mut Series{
+    series.season_watching = season;
+    series.last_watched = episode;
+    series.time_watched = time;
+    series.save_series();
+    series
 }
 
 fn get_series_list(series_root: &str) -> HashMap<String, String> {
