@@ -1,8 +1,7 @@
 use std::{fs::File, io::{Read, Seek, SeekFrom}, mem};
 use libmpv::{protocol::*, *};
 
-pub fn run(path: String){
-
+pub fn run(path: String, resume_time: f64) -> f64{
     let protocol = unsafe {
         Protocol::new(
             "filereader".into(),
@@ -20,18 +19,19 @@ pub fn run(path: String){
     let proto_ctx = mpv.create_protocol_context();
     proto_ctx.register(protocol).unwrap();
 
-    mpv.playlist_load_files(&[(&path, FileState::AppendPlay, None)])
-        .unwrap();
+    match mpv.playlist_load_files(&[(&path, FileState::AppendPlay, None)]) {
+        Ok(_) => println!("File loaded successfully"),
+        Err(e) => println!("Error loading file: {}", e),
+    }
 
 
     let total_tracks = mpv.get_property::<i64>("track-list/count").unwrap();
     println!("Total tracks: {}", total_tracks);
-
-    super::key_controls::handle_window_events(&mpv);
-
+    std::thread::sleep(std::time::Duration::from_millis(500));
+    mpv.set_property("time-pos", resume_time).unwrap();
+    let time = super::key_controls::handle_window_events(&mpv);
+    return time;
 }
-
-
 
 fn open(_: &mut (), uri: &str) -> File {
     // Open the file, and strip the `filereader://` part

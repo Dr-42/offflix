@@ -1,10 +1,4 @@
-use std::env;
 fn main() {
-    /*let path = format!(
-        "filereader://{}",
-        env::args()
-            .nth(1)
-            .expect("Expected path to local media as argument, found nil.")
-    );*/
-    offflix::series_manager::run("G:\\Series".to_owned());
+    //offflix::media_player::run("G:/Series/Avatar - The Last Airbender (2005 - 2008) [1080p]/1) Book One - Water/Avatar - The Last Airbender - S01E17 - The Northern Air Temple.mkv".to_owned());
+    offflix::interface_cli::run("G:\\Series");
 }

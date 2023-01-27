@@ -39,7 +39,7 @@ fn get_tracks(mpv: &libmpv::Mpv) -> HashMap<String, i64>{
     tracks
 }
 
-pub fn handle_window_events(mpv: &libmpv::Mpv){
+pub fn handle_window_events(mpv: &libmpv::Mpv) -> f64 {
 
     let mk = MyKeys {
         esc : 27,
@@ -73,7 +73,8 @@ pub fn handle_window_events(mpv: &libmpv::Mpv){
         let keys = device_state.get_keys();
         if keys != prev_keys && keys.len() > 0 {
             if keys[0] == mk.esc {
-                return;
+                let time: f64 = mpv.get_property("time-pos").unwrap();
+                return time;
             } else if keys[0] == mk.f {
                 if fullscreen {
                     mpv.set_property("fullscreen", false).unwrap();
