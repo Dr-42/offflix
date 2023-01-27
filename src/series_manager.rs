@@ -1,5 +1,5 @@
 use std::fs::*;
-use std::collections::HashMap;
+use indexmap::IndexMap;
 use serde::{Serialize, Deserialize};
 use serde_json;
 
@@ -94,6 +94,50 @@ impl Series {
         println!("{} - {}\nPath: {}", season, episode, episode_path);
         return episode_path; 
     }
+
+    pub fn resume_series(&mut self) {
+        let episode_path = self.get_episode_path(self.season_watching, self.last_watched);
+        let time = super::media_player::run(episode_path, self.time_watched);
+        self.time_watched = time;
+        self.save_series();
+    }
+
+    pub fn next_episode(&mut self) {
+        let episode_path;
+        if self.last_watched + 1 == self.seasons[self.season_watching as usize].episodes.len() as u64 {
+            if self.season_watching + 1 == self.seasons.len() as u64 {
+                println!("No more episodes");
+                return;
+            } else {
+                self.season_watching += 1;
+                self.last_watched = 0;
+                episode_path = self.get_episode_path(self.season_watching, self.last_watched);
+            }
+        } else {
+            self.last_watched += 1;
+            episode_path = self.get_episode_path(self.season_watching, self.last_watched);
+        }
+        let time = super::media_player::run(episode_path, 0.);
+        self.time_watched = time;
+        self.save_series();
+    }
+
+    pub fn watch_episode(&mut self, season: u64, episode: u64) {
+        if season > self.seasons.len() as u64 {
+            println!("Season {} does not exist", season);
+            return;
+        }
+        if episode > self.seasons[season as usize].episodes.len() as u64 {
+            println!("Episode {} does not exist", episode);
+            return;
+        }
+        self.season_watching = season;
+        self.last_watched = episode;
+        let episode_path = self.get_episode_path(season, episode);
+        let time = super::media_player::run(episode_path, 0.);
+        self.time_watched = time;
+        self.save_series();
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -165,8 +209,8 @@ pub fn update_series(series: &mut Series, season: u64, episode:u64, time:f64)-> 
     series
 }
 
-pub fn get_series_list(series_root: &str) -> HashMap<String, String> {
-    let mut series_list = HashMap::new();
+pub fn get_series_list(series_root: &str) -> IndexMap<String, String> {
+    let mut series_list = IndexMap::new();
     let serieses = read_dir(series_root).unwrap();
     for series in serieses {
         let series = series.unwrap();

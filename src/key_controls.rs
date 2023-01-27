@@ -73,7 +73,10 @@ pub fn handle_window_events(mpv: &libmpv::Mpv) -> f64 {
         let keys = device_state.get_keys();
         if keys != prev_keys && keys.len() > 0 {
             if keys[0] == mk.esc {
-                let time: f64 = mpv.get_property("time-pos").unwrap();
+                let time: f64 = match mpv.get_property("time-pos") {
+                    Ok(time) => time,
+                    Err(_) => 0.0,
+                };
                 return time;
             } else if keys[0] == mk.f {
                 if fullscreen {
