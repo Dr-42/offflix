@@ -33,6 +33,9 @@ fn get_tracks(mpv: &libmpv::Mpv) -> HashMap<String, i64>{
             video_count += 1;
         }
     }
+    println!("Audio tracks : {}", audio_count);
+    println!("Subtitle tracks : {}", sub_count);
+    println!("Video tracks : {}", video_count);
     tracks.insert("audio".to_owned(), audio_count);
     tracks.insert("sub".to_owned(), sub_count);
     tracks.insert("video".to_owned(), video_count);

@@ -25,10 +25,9 @@ pub fn run(path: String, resume_time: f64) -> f64{
     }
 
 
-    let total_tracks = mpv.get_property::<i64>("track-list/count").unwrap();
-    println!("Total tracks: {}", total_tracks);
     std::thread::sleep(std::time::Duration::from_millis(1000));
     mpv.set_property("time-pos", resume_time).unwrap();
+    mpv.set_property("osc", true).unwrap();
     let time = super::key_controls::handle_window_events(&mpv);
     return time;
 }
