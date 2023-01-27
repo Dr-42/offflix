@@ -43,6 +43,7 @@ pub fn run(root: &str){
                     episode_path = series.get_episode_path(series.season_watching - 1, series.last_watched);
                 }
                 let time = media_player::run(episode_path, 0.);
+                series.last_watched += 1;
                 series.time_watched = time;
                 save_session(&series);
                 series.save_series();
@@ -81,7 +82,7 @@ pub fn run(root: &str){
             let episode = season.episodes.get(input as usize - 1).unwrap();
             let episode_path = episode.episode_path.clone();
             println!("Playing episode: {}", episode_path);
-            let time = media_player::run(episode_path, series.time_watched);
+            let time = media_player::run(episode_path, 0.);
             series.last_watched = episode.episode_number;
             series.season_watching = season.season_number;
             series.time_watched = time;
