@@ -65,25 +65,18 @@ impl Series {
     }
 
 
-    pub fn verify_series_meta(&self) {
-        let path = self.series_path.clone() + "/" + self.series_name.as_str() + ".json";
-        if !std::path::Path::new(&path).exists() {
-            println!("Series meta not found, creating new one...");
-            self.save_series();
-        } else {
-            let series_json = std::fs::read_to_string(path).unwrap();
-            let series_meta: Series = serde_json::from_str(&series_json).unwrap();
-            if series_meta.seasons.len() != self.seasons.len() {
-                self.save_series();
-            } else {
-                for (season, season_meta) in self.seasons.iter().zip(series_meta.seasons.iter()) {
-                    if season.episodes.len() != season_meta.episodes.len() {
-                        self.save_series();
-                        break;
-                    }
+    pub fn verify_series_meta(&self) -> bool{
+        for season in &self.seasons {
+            if !std::path::Path::new(&season.path).exists() {
+                return false;
+            }
+            for episode in &season.episodes {
+                if !std::path::Path::new(episode.episode_path.as_str()).exists() {
+                    return false;
                 }
             }
         }
+        return true;
     }
 
     pub fn get_episode_path(&self, season: u64, episode: u64) -> String {
@@ -91,7 +84,6 @@ impl Series {
         let episode = episode as usize;
         let mut episode_path = self.seasons[season].episodes[episode].episode_path.clone();
         episode_path = episode_path.replace("\\", "/");
-        println!("{} - {}\nPath: {}", season, episode, episode_path);
         return episode_path; 
     }
 
@@ -190,9 +182,14 @@ pub fn load_series_meta(series_name: &str, series_path: &str) -> Series {
             }
         };
         let series: Series = serde_json::from_str(&series_json).unwrap();
-        //let series_load = Series::new(path);
-        //series_load.verify_series_meta();
-        return series;
+        if series.verify_series_meta(){
+            return series;
+        } else {
+            println!("Series meta mismatch, creating new one...");
+            let series = Series::new(series_path.to_owned());
+            series.save_series();
+            return series;
+        }
     } else {
         println!("Series meta not found, creating new one...");
         let series = Series::new(series_path.to_owned());

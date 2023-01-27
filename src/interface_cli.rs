@@ -10,7 +10,6 @@ pub fn run(root: &str){
             let series_name = get_last_session();
             if series_name.is_some() {
                 let (ser_name, ser_path) = series_list.get_key_value(series_name.unwrap().as_str()).unwrap();
-                println!("{} {}", ser_name, ser_path);
                 let mut series = series_manager::load_series_meta(ser_name, ser_path);
                 series.resume_series();
                 save_session(&series);
