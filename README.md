@@ -7,6 +7,8 @@ A simple application to auto manage series on your local storage.
 - [x] Resume watching
 - [x] Play next episode
 - [x] Auto increment season
+- [x] Play random episode
+- [ ] GUI
 
 ## Installation
 The application depends on libmpv, so you need to install it first.
