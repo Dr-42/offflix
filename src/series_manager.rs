@@ -2,6 +2,7 @@ use std::fs::*;
 use indexmap::IndexMap;
 use serde::{Serialize, Deserialize};
 use serde_json;
+use rand::Rng;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Series {
@@ -126,6 +127,17 @@ impl Series {
         self.season_watching = season;
         self.last_watched = episode;
         let episode_path = self.get_episode_path(season, episode);
+        let time = super::media_player::run(episode_path, 0.);
+        self.time_watched = time;
+        self.save_series();
+    }
+
+    pub fn play_random_episode(&mut self) {
+        let season = rand::thread_rng().gen_range(0 .. self.seasons.len());
+        let episode = rand::thread_rng().gen_range(0 .. self.seasons[season].episodes.len());
+        self.season_watching = season as u64;
+        self.last_watched = episode as u64;
+        let episode_path = self.get_episode_path(season as u64, episode as u64);
         let time = super::media_player::run(episode_path, 0.);
         self.time_watched = time;
         self.save_series();
