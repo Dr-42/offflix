@@ -1,6 +1,6 @@
 use super::series_manager;
 use eframe::{
-    egui::{self, TextStyle::Button, FontFamily::Proportional},
+    egui::{self, TextStyle::{Button, Body}, FontFamily::Proportional},
     run_native, epaint::{Vec2, FontId, ColorImage}};
 use egui_extras::image::RetainedImage;
 use std::path::{PathBuf, Path};
@@ -11,6 +11,13 @@ pub struct Series_images{
     path: String,
     block: String,
     banner: String,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum EnumMy {
+    First,
+    Second,
+    Third, 
 }
 
 pub fn run() {
@@ -29,6 +36,10 @@ struct MyEguiApp {
     banner_resume_rect : egui::Rect,
     banner_random_rect : egui::Rect,
     scroll_area_rect : egui::Rect,
+    block_size : egui::Vec2,
+    block_padding : f32,
+    win_open : bool,
+    selected: EnumMy,
 }
 
 impl MyEguiApp {
@@ -43,12 +54,17 @@ impl MyEguiApp {
     ColorImage::example());
 
         let mut style = (*cc.egui_ctx.style()).clone();
-        style.text_styles = [(Button, FontId::new(24.0, Proportional))].into();
+        style.text_styles = [(Button, FontId::new(24.0, Proportional)),
+                             (Body, FontId::new(24.0, Proportional ))].into();
         let top_banner_rect = egui::Rect::from_min_size(egui::Pos2::new(0.0, 0.0), egui::Vec2::new(800.0, 300.0));
         let banner_next_rect = egui::Rect::from_min_size(egui::Pos2::new(690.0, 250.0), egui::Vec2::new(100.0, 30.0));
         let banner_resume_rect = egui::Rect::from_min_size(egui::Pos2::new(580.0, 250.0), egui::Vec2::new(100.0, 30.0));
         let banner_random_rect = egui::Rect::from_min_size(egui::Pos2::new(470.0, 250.0), egui::Vec2::new(100.0, 30.0));
         let scroll_area_rect = egui::Rect::from_min_size(egui::Pos2::new(0.0, 300.0), egui::Vec2::new(800.0, 300.0));
+        let block_size = egui::Vec2::new(250.0, 250.0);
+        let block_padding = 10.;
+        let win_open = false;
+        let mut selected = EnumMy::First;
         MyEguiApp {
             image,
             style,
@@ -57,6 +73,10 @@ impl MyEguiApp {
             banner_resume_rect,
             banner_random_rect,
             scroll_area_rect,
+            block_size,
+            block_padding,
+            win_open,
+            selected,
          }
     }
 }
@@ -90,6 +110,49 @@ impl eframe::App for MyEguiApp {
                     println!("Random button clicked");
                 }
             }
+            ui.allocate_ui_at_rect(self.scroll_area_rect, |ui|{
+                egui::ScrollArea::vertical().show_viewport(ui,|ui, rect| {
+                    for i in 0..3 {
+                        ui.horizontal_centered(|ui| {
+                            for j in 0..3 {
+                                ui.add_space(self.block_padding);
+                                let block_resp = ui.add(egui::Image::new(self.image.texture_id(ctx), self.block_size));
+                                if block_resp.hovered() {
+                                    ui.allocate_ui_at_rect(block_resp.rect, |ui|{
+                                        ui.vertical_centered(|ui|{
+                                            ui.button("resume");
+                                            ui.button("next");
+                                            ui.button("random");
+                                            let sel_res = ui.button("select episode");
+
+                                            if sel_res.clicked(){
+                                                self.win_open = true;
+                                            }
+                                        });
+                                    });
+                                }
+                            }
+                        });
+                        ui.add_space(self.block_padding);
+                        ui.end_row();
+                    }
+                    ui.end_row();
+                });
+            });
+        });
+        egui::Window::new("Select Episode")
+        .open(&mut self.win_open)
+        .default_pos(egui::Pos2::new(400.0, 400.0))
+        .show(ctx, |ui|{
+            egui::ComboBox::from_label( "Select one!")
+            .selected_text(format!("{:?}", self.selected))
+            .show_ui(ui, |ui| {
+                ui.selectable_value(&mut self.selected, EnumMy::First, "First");
+                ui.selectable_value(&mut self.selected, EnumMy::Second, "Second");
+                ui.selectable_value(&mut self.selected, EnumMy::Third, "Third");
+            }
+        ); 
+            
         });
     }
 }
