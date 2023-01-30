@@ -1,7 +1,7 @@
 use super::series_manager;
 use eframe::{
     egui::{self, TextStyle::{Button, Body}, FontFamily::Proportional},
-    run_native, epaint::{Vec2, FontId, ColorImage}};
+    run_native, epaint::{Vec2, FontId, ColorImage}, emath::Align2};
 use egui_extras::image::RetainedImage;
 use std::path::{PathBuf, Path};
 //use image_search::{Arguments, blocking::{urls, search, download}};
@@ -11,13 +11,6 @@ pub struct Series_images{
     path: String,
     block: String,
     banner: String,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum EnumMy {
-    First,
-    Second,
-    Third, 
 }
 
 pub fn run() {
@@ -39,7 +32,8 @@ struct MyEguiApp {
     block_size : egui::Vec2,
     block_padding : f32,
     win_open : bool,
-    selected: EnumMy,
+    selected : usize,
+    selectables : Vec<String>,
 }
 
 impl MyEguiApp {
@@ -64,7 +58,8 @@ impl MyEguiApp {
         let block_size = egui::Vec2::new(250.0, 250.0);
         let block_padding = 10.;
         let win_open = false;
-        let mut selected = EnumMy::First;
+        let mut selected = 0;
+        let mut selectables = vec!["One".to_string(), "Two".to_string(), "Three".to_string()];
         MyEguiApp {
             image,
             style,
@@ -77,6 +72,7 @@ impl MyEguiApp {
             block_padding,
             win_open,
             selected,
+            selectables,
          }
     }
 }
@@ -89,7 +85,7 @@ impl eframe::App for MyEguiApp {
             let banner_resp = ui.put(self.top_banner_rect, 
             egui::Image::new(self.image.texture_id(ctx),
             Vec2::new(800.0, 300.0)));
-            if banner_resp.hovered() {
+            if banner_resp.hovered() && !self.win_open {
                 
                 let next_button = egui::Button::new("Next");
                 let next_button = ui.put(self.banner_next_rect, next_button);
@@ -117,9 +113,10 @@ impl eframe::App for MyEguiApp {
                             for j in 0..3 {
                                 ui.add_space(self.block_padding);
                                 let block_resp = ui.add(egui::Image::new(self.image.texture_id(ctx), self.block_size));
-                                if block_resp.hovered() {
+                                if block_resp.hovered() && !self.win_open{
                                     ui.allocate_ui_at_rect(block_resp.rect, |ui|{
                                         ui.vertical_centered(|ui|{
+                                            ui.add_space(50.);
                                             ui.button("resume");
                                             ui.button("next");
                                             ui.button("random");
@@ -142,17 +139,26 @@ impl eframe::App for MyEguiApp {
         });
         egui::Window::new("Select Episode")
         .open(&mut self.win_open)
-        .default_pos(egui::Pos2::new(400.0, 400.0))
+        .default_pos(ctx.available_rect().center())
+        .anchor(Align2::CENTER_CENTER, egui::Vec2::ZERO)
         .show(ctx, |ui|{
-            egui::ComboBox::from_label( "Select one!")
-            .selected_text(format!("{:?}", self.selected))
-            .show_ui(ui, |ui| {
-                ui.selectable_value(&mut self.selected, EnumMy::First, "First");
-                ui.selectable_value(&mut self.selected, EnumMy::Second, "Second");
-                ui.selectable_value(&mut self.selected, EnumMy::Third, "Third");
-            }
-        ); 
-            
+            ui.style_mut().text_styles = self.style.text_styles.clone();
+            egui::ComboBox::from_label( "Select Season").show_index(
+                ui,
+                &mut self.selected,
+                self.selectables.len(),
+                |i| self.selectables[i].to_owned()
+            );
+            egui::ComboBox::from_label( "Select Episode").show_index(
+                ui,
+                &mut self.selected,
+                self.selectables.len(),
+                |i| self.selectables[i].to_owned()
+            );
+            ui.vertical_centered(|ui| {
+                ui.button("Play");
+                ui.button("Cancel");
+            });
         });
     }
 }
