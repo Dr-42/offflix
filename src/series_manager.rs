@@ -12,6 +12,7 @@ pub struct Series {
     pub season_watching: u64,
     pub last_watched: u64,
     pub time_watched: f64,
+    pub series_image: Option<String>,
 }
 
 impl Series {
@@ -54,6 +55,7 @@ impl Series {
             season_watching: 0,
             last_watched: 0,
             time_watched: 0.,
+            series_image: None,
         }
     }
 
