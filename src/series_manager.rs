@@ -63,7 +63,10 @@ impl Series {
     pub fn save_series(&self){
         let series_json = serde_json::to_string(self).unwrap();
         //Save the json to series folder
-        let path = self.series_path.clone() + "/" + self.series_name.as_str() + ".json";
+        let path = "./meta/".to_string() + self.series_name.as_str() + ".json";
+        if !std::path::Path::exists(std::path::Path::new("./meta/")){
+            std::fs::create_dir_all("./meta/").unwrap();
+        }
         std::fs::write(path, series_json).unwrap();
     }
 
@@ -183,7 +186,7 @@ impl Episode {
 }
     
 pub fn load_series_meta(series_name: &str, series_path: &str) -> Series {
-    let path = series_path.to_owned() + "/" + series_name + ".json";
+    let path = "meta/".to_string() + series_name + ".json";
     if std::path::Path::new(&path).exists() {
         println!("Loading series meta from: {}", path);
         let series_json = match std::fs::read_to_string(path.clone()){

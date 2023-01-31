@@ -333,14 +333,14 @@ pub fn get_series_images(root: &str)->Vec<Series_images>{
             block_image: None,
             banner_image: None,
         };
-        //verify_image(&series_image.name, Image_type::Banner).unwrap();
-        //verify_image(&series_image.name, Image_type::Block).unwrap();
+        verify_image(&series_image.name, Image_type::Banner).unwrap();
+        verify_image(&series_image.name, Image_type::Block).unwrap();
         series_images.push(series_image);
     }
     series_images
 }
 
-/*fn verify_image(name: &str, imgtype: Image_type) -> Result<(), image_search::Error>{
+fn verify_image(name: &str, imgtype: Image_type) -> Result<(), image_search::Error>{
     use image_search::{Arguments, Time, blocking::{urls, search, download}};
         let path_type = match imgtype{
         Image_type::Banner => "banners",
@@ -376,4 +376,4 @@ pub fn get_series_images(root: &str)->Vec<Series_images>{
     }
     Ok(())
 
-}*/
+}
