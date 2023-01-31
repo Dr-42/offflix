@@ -2,6 +2,12 @@
 name = "offflix"
 version = "0.2.0"
 edition = "2021"
+description = "A simple application to auto manage series on your local storage."
+license = "MIT"
+license-file = "LICENSE"
+homepage = "https://github.com/Dr-42/offflix"
+repository = "https://github.com/Dr-42/offflix"
+keywords = ["mpv", "gui", "series", "anime", "video", "player", "video-libray", "media", "media-player"]
 
 [dependencies]
 libmpv-sirno = "2.0.2-fork.1"
