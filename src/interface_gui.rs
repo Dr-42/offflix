@@ -5,6 +5,7 @@ use eframe::{
     egui::{self, TextStyle::{Button, Body}, FontFamily::Proportional, Label},
     run_native, epaint::{Vec2, FontId, ColorImage, Color32}, emath::Align2};
 use egui_extras::image::RetainedImage;
+use indexmap::IndexMap;
 
 pub struct Series_images {
     pub name : String,
@@ -35,8 +36,12 @@ struct MyEguiApp{
     block_size : egui::Vec2,
     block_padding : f32,
     win_open : bool,
-    selected : usize,
-    selectables : Vec<String>,
+    win_series : String,
+    season_selected : usize,
+    episode_selected : usize,
+    season_list : Vec<String>,
+    episode_list : Vec<String>,
+    series_list : IndexMap<String, String>,
 }
 
 impl MyEguiApp {
@@ -61,8 +66,8 @@ impl MyEguiApp {
         let block_size = egui::Vec2::new(250.0, 250.0);
         let block_padding = 10.;
         let win_open = false;
-        let mut selected = 0;
-        let mut selectables = vec!["One".to_string(), "Two".to_string(), "Three".to_string()];
+        let mut season_selected = 0;
+        let mut episode_selected = 0;
         let mut images = get_series_images("G:\\Series");
         for image in &mut images {
             let banner_image = RetainedImage::from_image_bytes(
@@ -83,6 +88,12 @@ impl MyEguiApp {
             }
         }
 
+        let mut season_list = Vec::new();
+        let mut episode_list = Vec::new();
+        let mut win_series = String::new();
+
+        let series_list = series_manager::get_series_list("G:\\Series");
+
         MyEguiApp {
             images,
             style,
@@ -95,8 +106,12 @@ impl MyEguiApp {
             block_size,
             block_padding,
             win_open,
-            selected,
-            selectables,
+            win_series,
+            season_selected,
+            episode_selected,
+            season_list,
+            episode_list,
+            series_list,
         }
     }
 }
@@ -128,56 +143,46 @@ impl eframe::App for MyEguiApp {
                 
                 let next_button = egui::Button::new("Next");
                 let next_button = ui.put(self.banner_next_rect, next_button);
+                if next_button.clicked() {
+                    let series_name = series_manager::get_last_session();
+                    if series_name.is_some() {
+                        let (ser_name, ser_path) = self.series_list.get_key_value(series_name.unwrap().as_str()).unwrap();
+                        let mut series = series_manager::load_series_meta(ser_name, ser_path);
+                        series.next_episode();
+                        series_manager::save_session(&series);
+                    } else {
+                        println!("No last session found");
+                    }
+                }
 
                 let resume_button = egui::Button::new("Resume");
                 let resume_button = ui.put(self.banner_resume_rect, resume_button);
+                if resume_button.clicked() {
+                    let series_name = series_manager::get_last_session();
+                    if series_name.is_some() {
+                        let (ser_name, ser_path) = self.series_list.get_key_value(series_name.unwrap().as_str()).unwrap();
+                        let mut series = series_manager::load_series_meta(ser_name, ser_path);
+                        series.resume_series();
+                        series_manager::save_session(&series);
+                    } else {
+                        println!("No last session found");
+                    }
+                }
 
                 let random_button = egui::Button::new("Random");
                 let random_button = ui.put(self.banner_random_rect, random_button);
-
-                if next_button.clicked() {
-                    println!("Next button clicked");
-                }
-                if resume_button.clicked() {
-                    println!("Resume button clicked");
-                }
                 if random_button.clicked() {
-                    println!("Random button clicked");
+                    let series_name = series_manager::get_last_session();
+                    if series_name.is_some() {
+                        let (ser_name, ser_path) = self.series_list.get_key_value(series_name.unwrap().as_str()).unwrap();
+                        let mut series = series_manager::load_series_meta(ser_name, ser_path);
+                        series.play_random_episode();
+                        series_manager::save_session(&series);
+                    } else {
+                        println!("No last session found");
+                    }
                 }
             }
-            /*
-            ui.allocate_ui_at_rect(self.scroll_area_rect, |ui|{
-                egui::ScrollArea::vertical().show_viewport(ui,|ui, rect| {
-                        for i in 0..self.images.len() {
-                            ui.horizontal_centered(|ui| {
-                            ui.add_space(self.block_padding);
-                            let image = &self.images[i].block_image.as_ref().unwrap();
-                            let block_resp = ui.add(egui::Image::new(image.texture_id(ctx), self.block_size));
-                            if block_resp.hovered() && !self.win_open{
-                                ui.allocate_ui_at_rect(block_resp.rect, |ui|{
-                                    ui.vertical_centered(|ui|{
-                                        ui.add_space(50.);
-                                        ui.button("resume");
-                                        ui.button("next");
-                                        ui.button("random");
-                                        let sel_res = ui.button("select episode");
-            
-                                        if sel_res.clicked(){
-                                            self.win_open = true;
-                                        }
-                                    });
-                                });
-                            }
-                            });
-                            if (i + 1) % 3 == 0 {
-                                ui.add_space(self.block_padding);
-                                ui.end_row();
-                            }
-                        }
-                        ui.end_row();
-                });
-            });
-            */
 
             ui.allocate_ui_at_rect(self.scroll_area_rect, |ui|{
                 egui::ScrollArea::vertical().show_viewport(ui,|ui, rect| {
@@ -196,12 +201,34 @@ impl eframe::App for MyEguiApp {
                                             ui.add_space(50.);
                                             let lbl = ui.label(self.images[i * 3 + j].name.clone());
                                             ui.painter().rect_filled(lbl.rect,0., egui::Color32::from_rgba_premultiplied(2, 20, 20, 10));
-                                            ui.button("resume");
-                                            ui.button("next");
-                                            ui.button("random");
+                                            let res_but = ui.button("resume");
+                                            let nex_but = ui.button("next");
+                                            let rand_but = ui.button("random");
                                             let sel_res = ui.button("select episode");
 
+                                            if res_but.clicked(){
+                                                let (ser_name, ser_path) = self.series_list.get_key_value(self.images[i * 3 + j].name.as_str()).unwrap();
+                                                let mut series = series_manager::load_series_meta(ser_name, ser_path);
+                                                series.resume_series();
+                                                series_manager::save_session(&series);
+                                            }
+
+                                            if nex_but.clicked(){
+                                                let (ser_name, ser_path) = self.series_list.get_key_value(self.images[i * 3 + j].name.as_str()).unwrap();
+                                                let mut series = series_manager::load_series_meta(ser_name, ser_path);
+                                                series.next_episode();
+                                                series_manager::save_session(&series);
+                                            }
+
+                                            if rand_but.clicked(){
+                                                let (ser_name, ser_path) = self.series_list.get_key_value(self.images[i * 3 + j].name.as_str()).unwrap();
+                                                let mut series = series_manager::load_series_meta(ser_name, ser_path);
+                                                series.play_random_episode();
+                                                series_manager::save_session(&series);
+                                            }
+
                                             if sel_res.clicked(){
+                                                self.win_series = self.images[i * 3 + j].name.clone();
                                                 self.win_open = true;
                                             }
                                         });
@@ -216,29 +243,54 @@ impl eframe::App for MyEguiApp {
                 });
             });
         });
-        egui::Window::new("Select Episode")
-        .open(&mut self.win_open)
-        .default_pos(ctx.available_rect().center())
-        .anchor(Align2::CENTER_CENTER, egui::Vec2::ZERO)
-        .show(ctx, |ui|{
-            ui.style_mut().text_styles = self.style.text_styles.clone();
-            egui::ComboBox::from_label( "Select Season").show_index(
-                ui,
-                &mut self.selected,
-                self.selectables.len(),
-                |i| self.selectables[i].to_owned()
-            );
-            egui::ComboBox::from_label( "Select Episode").show_index(
-                ui,
-                &mut self.selected,
-                self.selectables.len(),
-                |i| self.selectables[i].to_owned()
-            );
-            ui.vertical_centered(|ui| {
-                ui.button("Play");
-                ui.button("Cancel");
+        if self.win_open {
+            egui::Window::new("Select Episode")
+            .default_pos(ctx.available_rect().center())
+            .anchor(Align2::CENTER_CENTER, egui::Vec2::ZERO)
+            .show(ctx, |ui|{
+                ui.style_mut().text_styles = self.style.text_styles.clone();
+
+                let season = self.series_list.get_key_value(self.win_series.as_str()).unwrap().1;
+                let mut series = series_manager::load_series_meta(self.win_series.as_str(), season);
+
+                for season in &series.seasons{
+                    self.season_list.push(season.season_name.clone());
+                }
+                
+                egui::ComboBox::from_label( "Select Season").show_index(
+                    ui,
+                    &mut self.season_selected,
+                    self.season_list.len(),
+                    |i| self.season_list[i].to_owned()
+                );
+
+                let seas = &series.seasons[self.season_selected];
+
+                for episode in &seas.episodes[..]{
+                    self.episode_list.push(episode.episode_name.clone());
+                }            
+                egui::ComboBox::from_label( "Select Episode").show_index(
+                    ui,
+                    &mut self.episode_selected,
+                    self.episode_list.len(),
+                    |i| self.episode_list[i].to_owned()
+                );
+                ui.vertical_centered(|ui| {
+                    let pl_but = ui.button("Play");
+                    let cl_but = ui.button("Close");
+
+                    if pl_but.clicked(){
+                        series.watch_episode(self.season_selected as u64, self.episode_selected as u64);
+                        series_manager::save_session(&series);
+                        self.win_open = false;
+                    }
+
+                    if cl_but.clicked(){
+                        self.win_open = false;
+                    }
+                });
             });
-        });
+        }
     }
 }
 
