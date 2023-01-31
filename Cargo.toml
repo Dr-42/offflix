@@ -6,7 +6,7 @@ description = "A simple application to auto manage series on your local storage.
 license = "MIT"
 homepage = "https://github.com/Dr-42/offflix"
 repository = "https://github.com/Dr-42/offflix"
-keywords = ["mpv", "gui", "series", "anime", "video", "player", "video-libray", "media", "media-player"]
+keywords = ["series", "video", "player", "video-libray", "media-player"]
 
 [dependencies]
 libmpv-sirno = "2.0.2-fork.1"
