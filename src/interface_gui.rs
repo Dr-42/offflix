@@ -37,10 +37,11 @@ struct MyEguiApp{
     block_padding : f32,
     win_open : bool,
     win_series : String,
+    win_ser_path : String,
     season_selected : usize,
     episode_selected : usize,
     season_list : Vec<String>,
-    episode_list : Vec<String>,
+    episode_list : Vec<Vec<String>>,
     series_list : IndexMap<String, String>,
 }
 
@@ -91,6 +92,7 @@ impl MyEguiApp {
         let mut season_list = Vec::new();
         let mut episode_list = Vec::new();
         let mut win_series = String::new();
+        let mut win_ser_path = String::new();
 
         let series_list = series_manager::get_series_list("G:\\Series");
 
@@ -107,6 +109,7 @@ impl MyEguiApp {
             block_padding,
             win_open,
             win_series,
+            win_ser_path,
             season_selected,
             episode_selected,
             season_list,
@@ -229,6 +232,23 @@ impl eframe::App for MyEguiApp {
 
                                             if sel_res.clicked(){
                                                 self.win_series = self.images[i * 3 + j].name.clone();
+                                                self.win_ser_path = self.series_list.get_key_value(self.win_series.as_str()).unwrap().1.to_string();
+                                                let series = series_manager::load_series_meta(self.win_series.as_str(), self.win_ser_path.as_str());
+
+                                                self.season_list.clear();
+                                                self.episode_list.clear();
+                                                self.season_selected = 0;
+                                                self.episode_selected = 0;
+
+                                                for season in series.seasons{
+                                                    self.season_list.push(season.season_name.clone());
+                                                    let mut episodes = Vec::new();
+                                                    for episode in season.episodes{
+                                                        episodes.push(episode.episode_name.clone());
+                                                    }            
+                                                    self.episode_list.push(episodes);
+                                                }
+                                                self.win_series = self.images[i * 3 + j].name.clone();
                                                 self.win_open = true;
                                             }
                                         });
@@ -246,40 +266,39 @@ impl eframe::App for MyEguiApp {
         if self.win_open {
             egui::Window::new("Select Episode")
             .default_pos(ctx.available_rect().center())
+            .fixed_size(Vec2::new(400., 400.))
             .anchor(Align2::CENTER_CENTER, egui::Vec2::ZERO)
             .show(ctx, |ui|{
                 ui.style_mut().text_styles = self.style.text_styles.clone();
 
-                let season = self.series_list.get_key_value(self.win_series.as_str()).unwrap().1;
-                let mut series = series_manager::load_series_meta(self.win_series.as_str(), season);
-
-                for season in &series.seasons{
-                    self.season_list.push(season.season_name.clone());
-                }
                 
-                egui::ComboBox::from_label( "Select Season").show_index(
+                let sea_combo = egui::ComboBox::from_label( "Select Season").wrap(true).show_index(
                     ui,
                     &mut self.season_selected,
                     self.season_list.len(),
-                    |i| self.season_list[i].to_owned()
+                    |mut i| {
+                        self.season_list[i].to_owned()
+                    }
                 );
 
-                let seas = &series.seasons[self.season_selected];
+                if sea_combo.changed(){
+                    self.episode_selected = 0;
+                }
 
-                for episode in &seas.episodes[..]{
-                    self.episode_list.push(episode.episode_name.clone());
-                }            
-                egui::ComboBox::from_label( "Select Episode").show_index(
+                let epii_combo = egui::ComboBox::from_label( "Select Episode")
+                .wrap(true).show_index(
                     ui,
                     &mut self.episode_selected,
-                    self.episode_list.len(),
-                    |i| self.episode_list[i].to_owned()
+                    self.episode_list[self.season_selected].len(),
+                    |i| self.episode_list[self.season_selected][i].to_owned()
                 );
                 ui.vertical_centered(|ui| {
                     let pl_but = ui.button("Play");
                     let cl_but = ui.button("Close");
 
                     if pl_but.clicked(){
+                        let series = self.series_list.get_key_value(self.win_series.as_str()).unwrap();
+                        let mut series = series_manager::load_series_meta(series.0, series.1);
                         series.watch_episode(self.season_selected as u64, self.episode_selected as u64);
                         series_manager::save_session(&series);
                         self.win_open = false;
