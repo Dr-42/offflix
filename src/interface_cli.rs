@@ -1,4 +1,4 @@
-use super::series_manager::{self, Series};
+use super::series_manager::{self, get_last_session, save_session};
 pub fn run(root: &str){
     let series_list = series_manager::get_series_list(root);
     println!("What do you wish to do?\n\t1. Resume last watched\n\t2. Watch next episode\n\t3. Play random episode\n\t4. Select a series to watch\n\t5. Exit");
@@ -101,17 +101,4 @@ pub fn run(root: &str){
             println!("Invalid choice...Exiting");
         },
     }
-}
-
-fn save_session(series: &Series) {
-    let current_series = series.series_name.as_str();
-    std::fs::write("session", current_series).unwrap();
-}
-
-fn get_last_session() -> Option<String> {
-    if std::path::Path::new("session").exists() {
-        let session = std::fs::read_to_string("session").unwrap();
-        return Some(session);
-    } 
-    None
 }

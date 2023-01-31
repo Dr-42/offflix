@@ -234,3 +234,16 @@ pub fn get_series_list(series_root: &str) -> IndexMap<String, String> {
     }
     series_list
 }
+
+pub fn save_session(series: &Series) {
+    let current_series = series.series_name.as_str();
+    std::fs::write("session", current_series).unwrap();
+}
+
+pub fn get_last_session() -> Option<String> {
+    if std::path::Path::new("session").exists() {
+        let session = std::fs::read_to_string("session").unwrap();
+        return Some(session);
+    } 
+    None
+}

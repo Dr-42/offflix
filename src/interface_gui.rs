@@ -1,16 +1,18 @@
+use std::path::{PathBuf, Path};
+
 use super::series_manager;
 use eframe::{
     egui::{self, TextStyle::{Button, Body}, FontFamily::Proportional},
     run_native, epaint::{Vec2, FontId, ColorImage}, emath::Align2};
 use egui_extras::image::RetainedImage;
-use std::path::{PathBuf, Path};
-//use image_search::{Arguments, blocking::{urls, search, download}};
 
-pub struct Series_images{
-    name: String,
-    path: String,
-    block: String,
-    banner: String,
+pub struct Series_images {
+    pub name : String,
+    pub path : String,
+    pub banner : String,
+    pub block : String,
+    pub banner_image : Option<RetainedImage>,
+    pub block_image : Option<RetainedImage>,
 }
 
 pub fn run() {
@@ -18,11 +20,11 @@ pub fn run() {
 
     native_options.initial_window_size = Some(egui::Vec2::new(800.0, 600.0));
     native_options.resizable = false;
-    eframe::run_native("MyApp", native_options, Box::new(|cc| Box::new(MyEguiApp::new(cc))));
+    run_native("MyApp", native_options, Box::new(|cc| Box::new(MyEguiApp::new(cc))));
 }
 
-struct MyEguiApp {
-    image: RetainedImage,
+struct MyEguiApp{
+    images: Vec<Series_images>,
     style: egui::Style,
     top_banner_rect : egui::Rect,
     banner_next_rect : egui::Rect,
@@ -44,8 +46,7 @@ impl MyEguiApp {
         //    &std::fs::read("images/banners/Avatar - The Last Airbender.jpg").unwrap(),
         //);
 
-        let image = RetainedImage::from_color_image("debug_name",
-    ColorImage::example());
+
 
         let mut style = (*cc.egui_ctx.style()).clone();
         style.text_styles = [(Button, FontId::new(24.0, Proportional)),
@@ -60,8 +61,29 @@ impl MyEguiApp {
         let win_open = false;
         let mut selected = 0;
         let mut selectables = vec!["One".to_string(), "Two".to_string(), "Three".to_string()];
-        MyEguiApp {
-            image,
+        let mut images = get_series_images("G:\\Series");
+        for image in &mut images {
+            let banner_image = RetainedImage::from_image_bytes(
+                "banner",
+                &std::fs::read(image.banner.clone()).unwrap(),
+            );
+            let block_image = RetainedImage::from_image_bytes(
+                "block",
+                &std::fs::read(image.block.clone()).unwrap(),
+            );
+            match banner_image {
+                Ok(banner_image) => image.banner_image = Some(banner_image),
+                Err(e) => image.banner_image = Some(RetainedImage::from_color_image("", ColorImage::example())),
+            }
+            match block_image {
+                Ok(block_image) => image.block_image = Some(block_image),
+                Err(e) => image.block_image = Some(RetainedImage::from_color_image("", ColorImage::example())),
+            }
+        }
+
+        let name = super::series_manager::get_last_session().unwrap();
+        let mgua = MyEguiApp {
+            images,
             style,
             top_banner_rect,
             banner_next_rect,
@@ -73,7 +95,8 @@ impl MyEguiApp {
             win_open,
             selected,
             selectables,
-         }
+        };
+        return mgua;
     }
 }
 
@@ -82,8 +105,10 @@ impl eframe::App for MyEguiApp {
         egui::CentralPanel::default().show(ctx, |ui| {
             ui.style_mut().text_styles = self.style.text_styles.clone();
             
-            let banner_resp = ui.put(self.top_banner_rect, 
-            egui::Image::new(self.image.texture_id(ctx),
+            let mut image = self.images[self.selected].banner_image.as_ref().unwrap();
+            
+            let banner_resp = ui.put(self.top_banner_rect,
+            egui::Image::new(image.texture_id(ctx),
             Vec2::new(800.0, 300.0)));
             if banner_resp.hovered() && !self.win_open {
                 
@@ -112,7 +137,7 @@ impl eframe::App for MyEguiApp {
                         ui.horizontal_centered(|ui| {
                             for j in 0..3 {
                                 ui.add_space(self.block_padding);
-                                let block_resp = ui.add(egui::Image::new(self.image.texture_id(ctx), self.block_size));
+                                let block_resp = ui.add(egui::Image::new(image.texture_id(ctx), self.block_size));
                                 if block_resp.hovered() && !self.win_open{
                                     ui.allocate_ui_at_rect(block_resp.rect, |ui|{
                                         ui.vertical_centered(|ui|{
@@ -165,7 +190,7 @@ impl eframe::App for MyEguiApp {
 
 
 
-/*enum Image_type{
+enum Image_type{
     Block,
     Banner,
 }
@@ -178,10 +203,10 @@ pub fn get_series_images(root: &str)->Vec<Series_images>{
         let series_image = Series_images{
             name: series.0.clone(),
             path: series.1.clone(),
-            block: format!("images/{}/{}", series.0.as_str(), "block.png"),
-            banner: format!("images/{}/{}", series.0.as_str(), "banner.png"),
-
-
+            block: format!("images/{}/{}0.jpg", "blocks", series.0.as_str()),
+            banner: format!("images/{}/{}0.jpg", "banners", series.0.as_str()),
+            block_image: None,
+            banner_image: None,
         };
         verify_image(&series_image.name, Image_type::Banner).unwrap();
         verify_image(&series_image.name, Image_type::Block).unwrap();
@@ -191,8 +216,8 @@ pub fn get_series_images(root: &str)->Vec<Series_images>{
 }
 
 fn verify_image(name: &str, imgtype: Image_type) -> Result<(), image_search::Error>{
-
-    let path_type = match imgtype{
+    use image_search::{Arguments, Time, blocking::{urls, search, download}};
+        let path_type = match imgtype{
         Image_type::Banner => "banners",
         Image_type::Block => "blocks",
     };
@@ -226,4 +251,4 @@ fn verify_image(name: &str, imgtype: Image_type) -> Result<(), image_search::Err
     }
     Ok(())
 
-}*/
+}
