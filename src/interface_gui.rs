@@ -2,12 +2,12 @@ use std::path::{PathBuf, Path};
 
 use super::series_manager;
 use eframe::{
-    egui::{self, TextStyle::{Button, Body}, FontFamily::Proportional, Label},
-    run_native, epaint::{Vec2, FontId, ColorImage, Color32}, emath::Align2};
+    egui::{self, TextStyle::{Button, Body}, FontFamily::Proportional,},
+    run_native, epaint::{Vec2, FontId, ColorImage,}, emath::Align2};
 use egui_extras::image::RetainedImage;
 use indexmap::IndexMap;
 
-pub struct Series_images {
+pub struct SeriesImages {
     pub name : String,
     pub path : String,
     pub banner : String,
@@ -16,16 +16,16 @@ pub struct Series_images {
     pub block_image : Option<RetainedImage>,
 }
 
-pub fn run() {
+pub fn run(root: String) {
     let mut native_options = eframe::NativeOptions::default();
 
     native_options.initial_window_size = Some(egui::Vec2::new(800.0, 600.0));
     native_options.resizable = false;
-    run_native("Offflix", native_options, Box::new(|cc| Box::new(MyEguiApp::new(cc))));
+    run_native("Offflix", native_options, Box::new(|cc| Box::new(MyEguiApp::new(cc, root))));
 }
 
 struct MyEguiApp{
-    images: Vec<Series_images>,
+    images: Vec<SeriesImages>,
     style: egui::Style,
     top_banner_rect : egui::Rect,
     banner_label_rect : egui::Rect,
@@ -46,7 +46,7 @@ struct MyEguiApp{
 }
 
 impl MyEguiApp {
-    fn new(cc: &eframe::CreationContext<'_>) -> Self {
+    fn new(cc: &eframe::CreationContext<'_>, root: String) -> Self {
         //Load image from path
         //let image = RetainedImage::from_image_bytes(
         //    "banner",
@@ -67,9 +67,9 @@ impl MyEguiApp {
         let block_size = egui::Vec2::new(250.0, 250.0);
         let block_padding = 10.;
         let win_open = false;
-        let mut season_selected = 0;
-        let mut episode_selected = 0;
-        let mut images = get_series_images("G:\\Series");
+        let season_selected = 0;
+        let episode_selected = 0;
+        let mut images = get_series_images(root.as_str());
         for image in &mut images {
             let banner_image = RetainedImage::from_image_bytes(
                 "banner",
@@ -81,20 +81,20 @@ impl MyEguiApp {
             );
             match banner_image {
                 Ok(banner_image) => image.banner_image = Some(banner_image),
-                Err(e) => image.banner_image = Some(RetainedImage::from_color_image("", ColorImage::example())),
+                Err(_e) => image.banner_image = Some(RetainedImage::from_color_image("", ColorImage::example())),
             }
             match block_image {
                 Ok(block_image) => image.block_image = Some(block_image),
-                Err(e) => image.block_image = Some(RetainedImage::from_color_image("", ColorImage::example())),
+                Err(_e) => image.block_image = Some(RetainedImage::from_color_image("", ColorImage::example())),
             }
         }
 
-        let mut season_list = Vec::new();
-        let mut episode_list = Vec::new();
-        let mut win_series = String::new();
-        let mut win_ser_path = String::new();
+        let season_list = Vec::new();
+        let episode_list = Vec::new();
+        let win_series = String::new();
+        let win_ser_path = String::new();
 
-        let series_list = series_manager::get_series_list("G:\\Series");
+        let series_list = series_manager::get_series_list(root.as_str());
 
         MyEguiApp {
             images,
@@ -120,11 +120,11 @@ impl MyEguiApp {
 }
 
 impl eframe::App for MyEguiApp {
-   fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
+   fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         egui::CentralPanel::default().show(ctx, |ui| {
             ui.style_mut().text_styles = self.style.text_styles.clone();
 
-            let mut last_series_name = match super::series_manager::get_last_session(){
+            let last_series_name = match super::series_manager::get_last_session(){
                 Some(last_series_name) => last_series_name,
                 None => self.series_list.keys().next().unwrap().to_string()
             };
@@ -144,7 +144,7 @@ impl eframe::App for MyEguiApp {
             let label_text = format!("{} : {}", "You were watching", self.images[banner_index].name);
             //Fill banner label rect with light gray color
             ui.painter().rect_filled(self.banner_label_rect,0., egui::Color32::from_rgb(200, 200, 200));
-            let banner_label = ui.put(self.banner_label_rect, egui::Label::new(egui::RichText::new(label_text).color(egui::Color32::BLACK)));
+            let _banner_label = ui.put(self.banner_label_rect, egui::Label::new(egui::RichText::new(label_text).color(egui::Color32::BLACK)));
             if banner_resp.hovered() && !self.win_open {
                 
                 let next_button = egui::Button::new("Next");
@@ -191,7 +191,7 @@ impl eframe::App for MyEguiApp {
             }
 
             ui.allocate_ui_at_rect(self.scroll_area_rect, |ui|{
-                egui::ScrollArea::vertical().show_viewport(ui,|ui, rect| {
+                egui::ScrollArea::vertical().show_viewport(ui,|ui, _rect| {
                     for i in 0..(self.images.len() / 3 + 1) {
                         ui.horizontal_centered(|ui| {
                             for j in 0..3 {
@@ -279,7 +279,7 @@ impl eframe::App for MyEguiApp {
                     ui,
                     &mut self.season_selected,
                     self.season_list.len(),
-                    |mut i| {
+                    |i| {
                         self.season_list[i].to_owned()
                     }
                 );
@@ -288,8 +288,7 @@ impl eframe::App for MyEguiApp {
                     self.episode_selected = 0;
                 }
 
-                let epii_combo = egui::ComboBox::from_label( "Select Episode")
-                .wrap(true).show_index(
+                let _epi_combo = egui::ComboBox::from_label( "Select Episode").wrap(true).show_index(
                     ui,
                     &mut self.episode_selected,
                     self.episode_list[self.season_selected].len(),
@@ -318,17 +317,17 @@ impl eframe::App for MyEguiApp {
 
 
 
-enum Image_type{
+enum ImageType{
     Block,
     Banner,
 }
 
-pub fn get_series_images(root: &str)->Vec<Series_images>{
+pub fn get_series_images(root: &str)->Vec<SeriesImages>{
     let mut series_images = Vec::new();
     let series_list = series_manager::get_series_list(root);
 
     for series in series_list{
-        let series_image = Series_images{
+        let series_image = SeriesImages{
             name: series.0.clone(),
             path: series.1.clone(),
             block: format!("images/{}/{}0.jpg", "blocks", series.0.as_str()),
@@ -336,25 +335,25 @@ pub fn get_series_images(root: &str)->Vec<Series_images>{
             block_image: None,
             banner_image: None,
         };
-        verify_image(&series_image.name, Image_type::Banner).unwrap();
-        verify_image(&series_image.name, Image_type::Block).unwrap();
+        verify_image(&series_image.name, ImageType::Banner).unwrap();
+        verify_image(&series_image.name, ImageType::Block).unwrap();
         series_images.push(series_image);
     }
     series_images
 }
 
-fn verify_image(name: &str, imgtype: Image_type) -> Result<(), image_search::Error>{
-    use image_search::{Arguments, Time, blocking::{urls, search, download}};
+fn verify_image(name: &str, imgtype: ImageType) -> Result<(), image_search::Error>{
+    use image_search::{Arguments, blocking::{urls, search, download}};
         let path_type = match imgtype{
-        Image_type::Banner => "banners",
-        Image_type::Block => "blocks",
+        ImageType::Banner => "banners",
+        ImageType::Block => "blocks",
     };
     let image_path = format!("images/{}/{}0.jpg",path_type, name);
     let image_path = Path::new(&image_path);
     if !image_path.exists(){
         println!("{} does not exist", image_path.display());
         match imgtype{
-            Image_type::Banner => {
+            ImageType::Banner => {
             let args = Arguments::new(name, 1)
             .ratio(image_search::Ratio::Wide)
             .format(image_search::Format::Jpg)
@@ -364,7 +363,7 @@ fn verify_image(name: &str, imgtype: Image_type) -> Result<(), image_search::Err
             let _images = search(args.clone())?;
             let _paths = download(args)?;
             },
-            Image_type::Block => {
+            ImageType::Block => {
             let args = Arguments::new(name, 1)
             .ratio(image_search::Ratio::Square)
             .image_type(image_search::ImageType::Photo)

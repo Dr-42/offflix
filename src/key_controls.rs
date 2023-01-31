@@ -75,7 +75,7 @@ pub fn handle_window_events(mpv: &libmpv::Mpv) -> f64 {
     loop{
         let keys = device_state.get_keys();
         let focus_result = mpv.get_property("focused");
-        let mut focused : bool = false;
+        let focused : bool;
         match focus_result {
             Ok(focus_result) => {
                 focused = focus_result;

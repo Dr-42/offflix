@@ -28,7 +28,7 @@ pub fn run(path: String, resume_time: f64) -> f64{
     std::thread::sleep(std::time::Duration::from_millis(1000));
     match mpv.set_property("time-pos", resume_time){
         Ok(_) => println!("Resuming at {}", resume_time),
-        Err(e) => {
+        Err(_e) => {
             std::thread::sleep(std::time::Duration::from_millis(1000));
             match mpv.set_property("time-pos", resume_time){
                 Ok(_) => println!("Resuming at {}", resume_time),
