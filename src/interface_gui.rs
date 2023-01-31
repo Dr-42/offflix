@@ -124,7 +124,10 @@ impl eframe::App for MyEguiApp {
         egui::CentralPanel::default().show(ctx, |ui| {
             ui.style_mut().text_styles = self.style.text_styles.clone();
 
-            let last_series_name = super::series_manager::get_last_session().unwrap();
+            let mut last_series_name = match super::series_manager::get_last_session(){
+                Some(last_series_name) => last_series_name,
+                None => self.series_list.keys().next().unwrap().to_string()
+            };
             
             let mut banner_index : usize = 0;
 
