@@ -26,7 +26,18 @@ pub fn run(path: String, resume_time: f64) -> f64{
 
 
     std::thread::sleep(std::time::Duration::from_millis(1000));
-    mpv.set_property("time-pos", resume_time).unwrap();
+    match mpv.set_property("time-pos", resume_time){
+        Ok(_) => println!("Resuming at {}", resume_time),
+        Err(e) => {
+            std::thread::sleep(std::time::Duration::from_millis(1000));
+            match mpv.set_property("time-pos", resume_time){
+                Ok(_) => println!("Resuming at {}", resume_time),
+                Err(e) => {
+                    println!("Error resuming: {}", e)
+                }
+            }
+        }
+    }
     mpv.set_property("osc", true).unwrap();
     let time = super::key_controls::handle_window_events(&mpv);
     return time;
