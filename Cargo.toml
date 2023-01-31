@@ -13,4 +13,4 @@ rand = "0.8.4"
 eframe = "0.20.0"
 egui_extras = {version = "0.20.0", features = ["image"]}
 image = { version = "0.24", features = ["jpeg", "png"] }
-image_search = { version = "0.4", features = ["blocking"] }
+# image_search = { version = "0.4", features = ["blocking"] }

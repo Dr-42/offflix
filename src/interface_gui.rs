@@ -2,8 +2,8 @@ use std::path::{PathBuf, Path};
 
 use super::series_manager;
 use eframe::{
-    egui::{self, TextStyle::{Button, Body}, FontFamily::Proportional},
-    run_native, epaint::{Vec2, FontId, ColorImage}, emath::Align2};
+    egui::{self, TextStyle::{Button, Body}, FontFamily::Proportional, Label},
+    run_native, epaint::{Vec2, FontId, ColorImage, Color32}, emath::Align2};
 use egui_extras::image::RetainedImage;
 
 pub struct Series_images {
@@ -20,13 +20,14 @@ pub fn run() {
 
     native_options.initial_window_size = Some(egui::Vec2::new(800.0, 600.0));
     native_options.resizable = false;
-    run_native("MyApp", native_options, Box::new(|cc| Box::new(MyEguiApp::new(cc))));
+    run_native("Offflix", native_options, Box::new(|cc| Box::new(MyEguiApp::new(cc))));
 }
 
 struct MyEguiApp{
     images: Vec<Series_images>,
     style: egui::Style,
     top_banner_rect : egui::Rect,
+    banner_label_rect : egui::Rect,
     banner_next_rect : egui::Rect,
     banner_resume_rect : egui::Rect,
     banner_random_rect : egui::Rect,
@@ -52,10 +53,11 @@ impl MyEguiApp {
         style.text_styles = [(Button, FontId::new(24.0, Proportional)),
                              (Body, FontId::new(24.0, Proportional ))].into();
         let top_banner_rect = egui::Rect::from_min_size(egui::Pos2::new(0.0, 0.0), egui::Vec2::new(800.0, 300.0));
+        let banner_label_rect = egui::Rect::from_min_size(egui::Pos2::new(0.0, 20.0), egui::Vec2::new(460.0, 30.0));
         let banner_next_rect = egui::Rect::from_min_size(egui::Pos2::new(690.0, 250.0), egui::Vec2::new(100.0, 30.0));
         let banner_resume_rect = egui::Rect::from_min_size(egui::Pos2::new(580.0, 250.0), egui::Vec2::new(100.0, 30.0));
         let banner_random_rect = egui::Rect::from_min_size(egui::Pos2::new(470.0, 250.0), egui::Vec2::new(100.0, 30.0));
-        let scroll_area_rect = egui::Rect::from_min_size(egui::Pos2::new(0.0, 300.0), egui::Vec2::new(800.0, 300.0));
+        let scroll_area_rect = egui::Rect::from_min_size(egui::Pos2::new(0.0, 310.0), egui::Vec2::new(800.0, 290.0));
         let block_size = egui::Vec2::new(250.0, 250.0);
         let block_padding = 10.;
         let win_open = false;
@@ -81,11 +83,11 @@ impl MyEguiApp {
             }
         }
 
-        let name = super::series_manager::get_last_session().unwrap();
-        let mgua = MyEguiApp {
+        MyEguiApp {
             images,
             style,
             top_banner_rect,
+            banner_label_rect,
             banner_next_rect,
             banner_resume_rect,
             banner_random_rect,
@@ -95,8 +97,7 @@ impl MyEguiApp {
             win_open,
             selected,
             selectables,
-        };
-        return mgua;
+        }
     }
 }
 
@@ -104,12 +105,25 @@ impl eframe::App for MyEguiApp {
    fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
         egui::CentralPanel::default().show(ctx, |ui| {
             ui.style_mut().text_styles = self.style.text_styles.clone();
+
+            let last_series_name = super::series_manager::get_last_session().unwrap();
             
-            let mut image = self.images[self.selected].banner_image.as_ref().unwrap();
-            
+            let mut banner_index : usize = 0;
+
+            for (i, img) in self.images.iter().enumerate() {
+                if img.name == last_series_name {
+                    banner_index = i;
+                    break;
+                }
+            }
+
             let banner_resp = ui.put(self.top_banner_rect,
-            egui::Image::new(image.texture_id(ctx),
+            egui::Image::new(self.images[banner_index].banner_image.as_ref().unwrap().texture_id(ctx),
             Vec2::new(800.0, 300.0)));
+            let label_text = format!("{} : {}", "You were watching", self.images[banner_index].name);
+            //Fill banner label rect with light gray color
+            ui.painter().rect_filled(self.banner_label_rect,0., egui::Color32::from_rgb(200, 200, 200));
+            let banner_label = ui.put(self.banner_label_rect, egui::Label::new(egui::RichText::new(label_text).color(egui::Color32::BLACK)));
             if banner_resp.hovered() && !self.win_open {
                 
                 let next_button = egui::Button::new("Next");
@@ -131,17 +145,57 @@ impl eframe::App for MyEguiApp {
                     println!("Random button clicked");
                 }
             }
+            /*
             ui.allocate_ui_at_rect(self.scroll_area_rect, |ui|{
                 egui::ScrollArea::vertical().show_viewport(ui,|ui, rect| {
-                    for i in 0..3 {
+                        for i in 0..self.images.len() {
+                            ui.horizontal_centered(|ui| {
+                            ui.add_space(self.block_padding);
+                            let image = &self.images[i].block_image.as_ref().unwrap();
+                            let block_resp = ui.add(egui::Image::new(image.texture_id(ctx), self.block_size));
+                            if block_resp.hovered() && !self.win_open{
+                                ui.allocate_ui_at_rect(block_resp.rect, |ui|{
+                                    ui.vertical_centered(|ui|{
+                                        ui.add_space(50.);
+                                        ui.button("resume");
+                                        ui.button("next");
+                                        ui.button("random");
+                                        let sel_res = ui.button("select episode");
+            
+                                        if sel_res.clicked(){
+                                            self.win_open = true;
+                                        }
+                                    });
+                                });
+                            }
+                            });
+                            if (i + 1) % 3 == 0 {
+                                ui.add_space(self.block_padding);
+                                ui.end_row();
+                            }
+                        }
+                        ui.end_row();
+                });
+            });
+            */
+
+            ui.allocate_ui_at_rect(self.scroll_area_rect, |ui|{
+                egui::ScrollArea::vertical().show_viewport(ui,|ui, rect| {
+                    for i in 0..(self.images.len() / 3 + 1) {
                         ui.horizontal_centered(|ui| {
                             for j in 0..3 {
+                                if i*3 + j >= self.images.len() {
+                                    break;
+                                }
                                 ui.add_space(self.block_padding);
+                                let image = &self.images[i * 3 + j].block_image.as_ref().unwrap();
                                 let block_resp = ui.add(egui::Image::new(image.texture_id(ctx), self.block_size));
                                 if block_resp.hovered() && !self.win_open{
                                     ui.allocate_ui_at_rect(block_resp.rect, |ui|{
                                         ui.vertical_centered(|ui|{
                                             ui.add_space(50.);
+                                            let lbl = ui.label(self.images[i * 3 + j].name.clone());
+                                            ui.painter().rect_filled(lbl.rect,0., egui::Color32::from_rgba_premultiplied(2, 20, 20, 10));
                                             ui.button("resume");
                                             ui.button("next");
                                             ui.button("random");
@@ -208,14 +262,14 @@ pub fn get_series_images(root: &str)->Vec<Series_images>{
             block_image: None,
             banner_image: None,
         };
-        verify_image(&series_image.name, Image_type::Banner).unwrap();
-        verify_image(&series_image.name, Image_type::Block).unwrap();
+        //verify_image(&series_image.name, Image_type::Banner).unwrap();
+        //verify_image(&series_image.name, Image_type::Block).unwrap();
         series_images.push(series_image);
     }
     series_images
 }
 
-fn verify_image(name: &str, imgtype: Image_type) -> Result<(), image_search::Error>{
+/*fn verify_image(name: &str, imgtype: Image_type) -> Result<(), image_search::Error>{
     use image_search::{Arguments, Time, blocking::{urls, search, download}};
         let path_type = match imgtype{
         Image_type::Banner => "banners",
@@ -251,4 +305,4 @@ fn verify_image(name: &str, imgtype: Image_type) -> Result<(), image_search::Err
     }
     Ok(())
 
-}
+}*/
