@@ -151,42 +151,45 @@ impl eframe::App for MyEguiApp {
                 let next_button = ui.put(self.banner_next_rect, next_button);
                 if next_button.clicked() {
                     let series_name = series_manager::get_last_session();
+                    let (ser_name , ser_path);
                     if series_name.is_some() {
-                        let (ser_name, ser_path) = self.series_list.get_key_value(series_name.unwrap().as_str()).unwrap();
-                        let mut series = series_manager::load_series_meta(ser_name, ser_path);
-                        series.next_episode();
-                        series_manager::save_session(&series);
+                        (ser_name, ser_path) = self.series_list.get_key_value(series_name.unwrap().as_str()).unwrap();
                     } else {
-                        println!("No last session found");
+                        (ser_name, ser_path) = self.series_list.get_key_value(self.images[0].name.as_str()).unwrap();
                     }
+                    let mut series = series_manager::load_series_meta(ser_name, ser_path);
+                    series.next_episode();
+                    series_manager::save_session(&series);
                 }
 
                 let resume_button = egui::Button::new("Resume");
                 let resume_button = ui.put(self.banner_resume_rect, resume_button);
                 if resume_button.clicked() {
                     let series_name = series_manager::get_last_session();
+                    let (ser_name , ser_path);
                     if series_name.is_some() {
-                        let (ser_name, ser_path) = self.series_list.get_key_value(series_name.unwrap().as_str()).unwrap();
-                        let mut series = series_manager::load_series_meta(ser_name, ser_path);
-                        series.resume_series();
-                        series_manager::save_session(&series);
+                        (ser_name, ser_path) = self.series_list.get_key_value(series_name.unwrap().as_str()).unwrap();
                     } else {
-                        println!("No last session found");
+                        (ser_name, ser_path) = self.series_list.get_key_value(self.images[0].name.as_str()).unwrap();
                     }
+                    let mut series = series_manager::load_series_meta(ser_name, ser_path);
+                    series.resume_series();
+                    series_manager::save_session(&series);
                 }
 
                 let random_button = egui::Button::new("Random");
                 let random_button = ui.put(self.banner_random_rect, random_button);
                 if random_button.clicked() {
                     let series_name = series_manager::get_last_session();
+                    let (ser_name , ser_path);
                     if series_name.is_some() {
-                        let (ser_name, ser_path) = self.series_list.get_key_value(series_name.unwrap().as_str()).unwrap();
-                        let mut series = series_manager::load_series_meta(ser_name, ser_path);
-                        series.play_random_episode();
-                        series_manager::save_session(&series);
+                        (ser_name, ser_path) = self.series_list.get_key_value(series_name.unwrap().as_str()).unwrap();
                     } else {
-                        println!("No last session found");
+                        (ser_name, ser_path) = self.series_list.get_key_value(self.images[0].name.as_str()).unwrap();
                     }
+                    let mut series = series_manager::load_series_meta(ser_name, ser_path);
+                    series.play_random_episode();
+                    series_manager::save_session(&series);
                 }
             }
 
