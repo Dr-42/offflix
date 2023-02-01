@@ -104,12 +104,12 @@ impl Series {
         }
     }
 
-    pub fn next_episode(&mut self) {
+    pub fn next_episode(&mut self) -> bool {
         let episode_path;
         if self.last_watched + 1 == self.seasons[self.season_watching as usize].episodes.len() as u64 {
             if self.season_watching + 1 == self.seasons.len() as u64 {
                 println!("No more episodes");
-                return;
+                return false;
             } else {
                 self.season_watching += 1;
                 self.last_watched = 0;
@@ -122,9 +122,10 @@ impl Series {
         let (finished , time) = super::media_player::run(episode_path, 0.);
         self.time_watched = time;
         if finished {
-            self.next_episode();
+            return self.next_episode();
         } else {
             self.save_series();
+            return true; 
         }
     }
 

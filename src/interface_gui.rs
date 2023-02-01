@@ -36,6 +36,8 @@ struct MyEguiApp{
     block_size : egui::Vec2,
     block_padding : f32,
     win_open : bool,
+    info_win_open : bool,
+    info_string : String,
     win_series : String,
     win_ser_path : String,
     season_selected : usize,
@@ -67,6 +69,8 @@ impl MyEguiApp {
         let block_size = egui::Vec2::new(250.0, 250.0);
         let block_padding = 10.;
         let win_open = false;
+        let info_win_open = false;
+        let info_string = String::new();
         let season_selected = 0;
         let episode_selected = 0;
         let mut images = get_series_images(root.as_str());
@@ -108,6 +112,8 @@ impl MyEguiApp {
             block_size,
             block_padding,
             win_open,
+            info_win_open,
+            info_string,
             win_series,
             win_ser_path,
             season_selected,
@@ -158,7 +164,11 @@ impl eframe::App for MyEguiApp {
                         (ser_name, ser_path) = self.series_list.get_key_value(self.images[0].name.as_str()).unwrap();
                     }
                     let mut series = series_manager::load_series_meta(ser_name, ser_path);
-                    series.next_episode();
+                    let next_left = series.next_episode();
+                    if !next_left {
+                        self.info_string = format!("{} : {}", "You have finished watching", series.series_name);
+                        self.info_win_open = true;
+                    }
                     series_manager::save_session(&series);
                 }
 
@@ -225,7 +235,12 @@ impl eframe::App for MyEguiApp {
                                             if nex_but.clicked(){
                                                 let (ser_name, ser_path) = self.series_list.get_key_value(self.images[i * 3 + j].name.as_str()).unwrap();
                                                 let mut series = series_manager::load_series_meta(ser_name, ser_path);
-                                                series.next_episode();
+                                                let next_left = series.next_episode();
+                                                if !next_left {
+                                                    self.info_string = format!("{} is finished", ser_name);
+                                                    self.info_win_open = true;
+                                                    println!("{} is finished", ser_name);
+                                                }
                                                 series_manager::save_session(&series);
                                             }
 
@@ -311,6 +326,20 @@ impl eframe::App for MyEguiApp {
 
                     if cl_but.clicked(){
                         self.win_open = false;
+                    }
+                });
+            });
+        }
+        else if self.info_win_open{
+            egui::Window::new("Info")
+            .fixed_size(Vec2::new(400., 400.))
+            .show(ctx, |ui|{
+                ui.style_mut().text_styles = self.style.text_styles.clone();
+                ui.vertical_centered(|ui|{
+                    ui.label(self.info_string.clone());
+                    let cl_but = ui.button("Close");
+                    if cl_but.clicked(){
+                        self.info_win_open = false;
                     }
                 });
             });

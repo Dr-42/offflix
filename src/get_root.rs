@@ -3,7 +3,7 @@ use eframe::{egui, run_native};
 pub fn run() {
     let mut native_options = eframe::NativeOptions::default();
     native_options.initial_window_size = Some(egui::Vec2::new(400.0, 160.0));
-    run_native("My egui App", native_options, Box::new(|cc| Box::new(MyEguiApp::new(cc))));
+    run_native("Offlix root selector", native_options, Box::new(|cc| Box::new(MyEguiApp::new(cc))));
 }
 
 #[derive(Default)]
