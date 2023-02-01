@@ -95,9 +95,13 @@ impl Series {
 
     pub fn resume_series(&mut self) {
         let episode_path = self.get_episode_path(self.season_watching, self.last_watched);
-        let time = super::media_player::run(episode_path, self.time_watched);
+        let (finished , time) = super::media_player::run(episode_path, 0.);
         self.time_watched = time;
-        self.save_series();
+        if finished {
+            self.next_episode();
+        } else {
+            self.save_series();
+        }
     }
 
     pub fn next_episode(&mut self) {
@@ -115,9 +119,13 @@ impl Series {
             self.last_watched += 1;
             episode_path = self.get_episode_path(self.season_watching, self.last_watched);
         }
-        let time = super::media_player::run(episode_path, 0.);
+        let (finished , time) = super::media_player::run(episode_path, 0.);
         self.time_watched = time;
-        self.save_series();
+        if finished {
+            self.next_episode();
+        } else {
+            self.save_series();
+        }
     }
 
     pub fn watch_episode(&mut self, season: u64, episode: u64) {
@@ -132,9 +140,13 @@ impl Series {
         self.season_watching = season;
         self.last_watched = episode;
         let episode_path = self.get_episode_path(season, episode);
-        let time = super::media_player::run(episode_path, 0.);
+        let (finished , time) = super::media_player::run(episode_path, 0.);
         self.time_watched = time;
-        self.save_series();
+        if finished {
+            self.next_episode();
+        } else {
+            self.save_series();
+        }
     }
 
     pub fn play_random_episode(&mut self) {
@@ -143,9 +155,13 @@ impl Series {
         self.season_watching = season as u64;
         self.last_watched = episode as u64;
         let episode_path = self.get_episode_path(season as u64, episode as u64);
-        let time = super::media_player::run(episode_path, 0.);
+        let (finished , time) = super::media_player::run(episode_path, 0.);
         self.time_watched = time;
-        self.save_series();
+        if finished {
+            self.next_episode();
+        } else {
+            self.save_series();
+        }
     }
 }
 

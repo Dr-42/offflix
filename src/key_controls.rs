@@ -42,7 +42,7 @@ fn get_tracks(mpv: &libmpv::Mpv) -> HashMap<String, i64>{
     tracks
 }
 
-pub fn handle_window_events(mpv: &libmpv::Mpv) -> f64 {
+pub fn handle_window_events(mpv: &libmpv::Mpv) -> (bool, f64) {
 
     #[cfg(target_os = "windows")]
     let mk = MyKeys {
@@ -87,10 +87,14 @@ pub fn handle_window_events(mpv: &libmpv::Mpv) -> f64 {
     let mut sub_track = 1;
     let mut video_track = 1;
     let mut sub_enabled = false;
-    let mut vid_enabled = true;
     let mut audio_enabled = true;
 
     loop{
+        //if media player is closed, return the time
+        let end_result = mpv.get_property("eof-reached").unwrap();
+        if end_result {
+            return (true, 0.0);
+        }
         let keys = device_state.get_keys();
         let focus_result = mpv.get_property("focused");
         let focused : bool;
@@ -109,7 +113,7 @@ pub fn handle_window_events(mpv: &libmpv::Mpv) -> f64 {
                         Ok(time) => time,
                         Err(_) => 0.0,
                     };
-                    return time;
+                    return (false, time);
                 } else if keys[0] == mk.f {
                     if fullscreen {
                         mpv.set_property("fullscreen", false).unwrap();
@@ -210,14 +214,6 @@ pub fn handle_window_events(mpv: &libmpv::Mpv) -> f64 {
                             } else {
                                 mpv.set_property("aid", audio_track).unwrap();
                                 audio_enabled = true;
-                            }
-                        } else if keys[1] == mk.v {
-                            if vid_enabled {
-                                mpv.set_property("vid", "no").unwrap();
-                                vid_enabled = false;
-                            } else {
-                                mpv.set_property("vid", video_track).unwrap();
-                                vid_enabled = true;
                             }
                         }
                     }

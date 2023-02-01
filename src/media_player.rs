@@ -1,7 +1,7 @@
 use std::{fs::File, io::{Read, Seek, SeekFrom}, mem};
 use libmpv::{protocol::*, *};
 
-pub fn run(path: String, resume_time: f64) -> f64{
+pub fn run(path: String, resume_time: f64) -> (bool, f64){
     let protocol = unsafe {
         Protocol::new(
             "filereader".into(),
@@ -26,6 +26,7 @@ pub fn run(path: String, resume_time: f64) -> f64{
 
 
     std::thread::sleep(std::time::Duration::from_millis(1000));
+    mpv.set_property("keep-open", true).unwrap();
     match mpv.set_property("time-pos", resume_time){
         Ok(_) => println!("Resuming at {}", resume_time),
         Err(_e) => {
@@ -39,8 +40,8 @@ pub fn run(path: String, resume_time: f64) -> f64{
         }
     }
     mpv.set_property("osc", true).unwrap();
-    let time = super::key_controls::handle_window_events(&mpv);
-    return time;
+    let (finished, time) = super::key_controls::handle_window_events(&mpv);
+    (finished, time)
 }
 
 fn open(_: &mut (), uri: &str) -> File {
