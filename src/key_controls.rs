@@ -44,6 +44,7 @@ fn get_tracks(mpv: &libmpv::Mpv) -> HashMap<String, i64>{
 
 pub fn handle_window_events(mpv: &libmpv::Mpv) -> f64 {
 
+    #[cfg(target_os = "windows")]
     let mk = MyKeys {
         esc : 27,
         f : 70,
@@ -58,6 +59,23 @@ pub fn handle_window_events(mpv: &libmpv::Mpv) -> f64 {
         ctrl : 17,
         shift : 16,
     };
+
+    #[cfg(target_os = "linux")]
+    let mk = MyKeys{
+        esc : 1,
+        f : 33,
+        space : 57,
+        left : 105,
+        right : 106,
+        up : 103,
+        down : 108,
+        a : 30,
+        v : 47,
+        s : 31,
+        ctrl : 29,
+        shift : 42,
+    };
+
     let device_state = DeviceState::new();
     let mut prev_keys = vec![];
     let mut paused = false;
