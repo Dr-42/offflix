@@ -10,6 +10,7 @@ A simple application to auto manage series on your local storage.
 - [x] Auto increment season
 - [x] Play random episode
 - [x] GUI
+- [x] Multithreaded image loading
 
 ## Installation
 The application depends on libmpv, so you need to install it first.
@@ -55,7 +56,6 @@ cargo run --release
 - 'Ctrl+A' to toggle audio
 - 'V' to cycle video tracks forward
 - 'Shift+V' to cycle video tracks backward
-- 'Ctrl+V' to toggle video
 - 'S' to cycle subtitle tracks forward
 - 'Shift+S' to cycle subtitle tracks backward
 - 'Ctrl+S' to toggle subtitles
