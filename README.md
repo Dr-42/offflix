@@ -2,6 +2,7 @@
 
 A simple application to auto manage series on your local storage.
 ![Offlix](https://user-images.githubusercontent.com/64161204/215824616-97705990-09f2-4fac-b32d-e2ffcd8e35eb.jpg)
+![Loading screen](https://user-images.githubusercontent.com/64161204/216486171-f54d93b7-83d5-4870-915e-4ff8e307ba6a.jpg)
 
 ## Features
 
