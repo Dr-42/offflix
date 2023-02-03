@@ -89,7 +89,7 @@ impl MyEguiApp {
         let info_string = String::new();
         let season_selected = 0;
         let episode_selected = 0;
-        let mut images: Vec<SeriesImages>= Vec::new();//get_series_images(root.as_str());
+        let images: Vec<SeriesImages>= Vec::new();//get_series_images(root.as_str());
 
         let season_list = Vec::new();
         let episode_list = Vec::new();
