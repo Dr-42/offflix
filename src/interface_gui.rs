@@ -31,7 +31,11 @@ struct MyEguiApp{
     thread_count: usize,
     frame_count: usize,
     threads: Vec<std::thread::JoinHandle<()>>,
+    total_threads: usize,
     finished: Vec<usize>,
+    loading_text_rect : egui::Rect,
+    progress_bar_rect : egui::Rect,
+    spin_rect : egui::Rect,
     style: egui::Style,
     top_banner_rect : egui::Rect,
     banner_label_rect : egui::Rect,
@@ -64,6 +68,11 @@ impl MyEguiApp {
         let frame_count = 0;
         let threads: Vec<std::thread::JoinHandle<()>> = Vec::new();
         let finished: Vec<usize> = Vec::new();
+        let total_threads = 0;
+
+        let loading_text_rect = egui::Rect::from_min_size(egui::Pos2::new(0.0, 300.), egui::Vec2::new(800.0, 200.0));
+        let progress_bar_rect = egui::Rect::from_min_size(egui::Pos2::new(100.0, 500.), egui::Vec2::new(600.0, 100.0));
+        let spin_rect = egui::Rect::from_min_size(egui::Pos2::new(350.0, 400.), egui::Vec2::new(100.0, 100.0));
 
         let top_banner_rect = egui::Rect::from_min_size(egui::Pos2::new(0.0, 0.0), egui::Vec2::new(800.0, 300.0));
         let banner_label_rect = egui::Rect::from_min_size(egui::Pos2::new(0.0, 20.0), egui::Vec2::new(460.0, 30.0));
@@ -94,7 +103,11 @@ impl MyEguiApp {
             thread_count,
             frame_count,
             threads,
+            total_threads,
             finished,
+            loading_text_rect,
+            progress_bar_rect,
+            spin_rect,
             style,
             top_banner_rect,
             banner_label_rect,
@@ -122,7 +135,13 @@ impl eframe::App for MyEguiApp {
    fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         egui::CentralPanel::default().show(ctx, |ui| {
             if self.loading{
-                ui.label(format!("Loading... {}/{}", self.thread_count, self.frame_count));
+                ui.style_mut().text_styles = self.style.text_styles.clone();
+                let load_label = egui::Label::new(format!("Loading... {}/{}", (self.total_threads - self.thread_count), self.total_threads));
+                let progress_bar = egui::ProgressBar::new((self.total_threads - self.thread_count) as f32 / self.total_threads as f32);
+                let spin = egui::Spinner::new();
+                ui.put(self.loading_text_rect, load_label);
+                ui.put(self.progress_bar_rect, progress_bar);
+                ui.put(self.spin_rect, spin);
                 if self.frame_count == 1 {
                     let series_list = series_manager::get_series_list(self.root.as_str());
 
@@ -140,11 +159,11 @@ impl eframe::App for MyEguiApp {
                         self.threads.push(std::thread::spawn(move || {
                             verify_image(name.as_str(), ImageType::Banner).unwrap();
                             verify_image(name.clone().as_str(), ImageType::Block).unwrap();
-                            return;
                         }));
                         self.images.push(series_image);
                         self.thread_count += 1;
                     }
+                    self.total_threads = self.thread_count;
                 }
                 for (i, thread) in &mut self.threads.iter().enumerate(){
                     if thread.is_finished() && !self.finished.contains(&i){
