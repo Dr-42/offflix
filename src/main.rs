@@ -1,3 +1,6 @@
+use std::os::windows;
+
+#[windows_subsystem = "windows"]
 fn main() {
     if !std::path::Path::new("./root.conf").exists() {
         offflix::get_root::run();
