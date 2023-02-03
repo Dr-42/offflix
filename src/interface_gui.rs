@@ -33,6 +33,7 @@ struct MyEguiApp{
     threads: Vec<std::thread::JoinHandle<()>>,
     total_threads: usize,
     finished: Vec<usize>,
+    name_rect : egui::Rect,
     loading_text_rect : egui::Rect,
     progress_bar_rect : egui::Rect,
     spin_rect : egui::Rect,
@@ -70,6 +71,7 @@ impl MyEguiApp {
         let finished: Vec<usize> = Vec::new();
         let total_threads = 0;
 
+        let name_rect = egui::Rect::from_min_size(egui::Pos2::new(0.0, 0.0), egui::Vec2::new(800.0, 300.0));
         let loading_text_rect = egui::Rect::from_min_size(egui::Pos2::new(0.0, 300.), egui::Vec2::new(800.0, 200.0));
         let progress_bar_rect = egui::Rect::from_min_size(egui::Pos2::new(100.0, 500.), egui::Vec2::new(600.0, 100.0));
         let spin_rect = egui::Rect::from_min_size(egui::Pos2::new(350.0, 400.), egui::Vec2::new(100.0, 100.0));
@@ -105,6 +107,7 @@ impl MyEguiApp {
             threads,
             total_threads,
             finished,
+            name_rect,
             loading_text_rect,
             progress_bar_rect,
             spin_rect,
@@ -136,9 +139,11 @@ impl eframe::App for MyEguiApp {
         egui::CentralPanel::default().show(ctx, |ui| {
             if self.loading{
                 ui.style_mut().text_styles = self.style.text_styles.clone();
+                let name_label = egui::Label::new("OFFFLIX");
                 let load_label = egui::Label::new(format!("Loading... {}/{}", (self.total_threads - self.thread_count), self.total_threads));
                 let progress_bar = egui::ProgressBar::new((self.total_threads - self.thread_count) as f32 / self.total_threads as f32);
                 let spin = egui::Spinner::new();
+                ui.put(self.name_rect, name_label);
                 ui.put(self.loading_text_rect, load_label);
                 ui.put(self.progress_bar_rect, progress_bar);
                 ui.put(self.spin_rect, spin);
