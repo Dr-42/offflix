@@ -95,7 +95,7 @@ impl Series {
 
     pub fn resume_series(&mut self) {
         let episode_path = self.get_episode_path(self.season_watching, self.last_watched);
-        let (finished , time) = super::media_player::run(episode_path, 0.);
+        let (finished , time) = super::media_player::run(episode_path, self.time_watched);
         self.time_watched = time;
         if finished {
             self.next_episode();
