@@ -1,4 +1,4 @@
-use std::{path::{PathBuf, Path}};
+use std::path::{PathBuf, Path};
 
 use super::series_manager;
 use eframe::{
