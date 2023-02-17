@@ -96,7 +96,7 @@ impl MyEguiApp {
         let win_series = String::new();
         let win_ser_path = String::new();
 
-        let series_list = series_manager::get_series_list(root.as_str());
+        let series_list: IndexMap<String, String> = Default::default();//series_manager::get_series_list(root.as_str());
 
         MyEguiApp {
             root,
