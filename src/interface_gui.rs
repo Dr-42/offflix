@@ -96,7 +96,7 @@ impl MyEguiApp {
         let win_series = String::new();
         let win_ser_path = String::new();
 
-        let series_list: IndexMap<String, String> = Default::default();//series_manager::get_series_list(root.as_str());
+        let series_list: IndexMap<String, String> = IndexMap::new();//series_manager::get_series_list(root.as_str());
 
         MyEguiApp {
             root,
@@ -148,9 +148,9 @@ impl eframe::App for MyEguiApp {
                 ui.put(self.progress_bar_rect, progress_bar);
                 ui.put(self.spin_rect, spin);
                 if self.frame_count == 1 {
-                    let series_list = series_manager::get_series_list(self.root.as_str());
+                    self.series_list = series_manager::get_series_list(self.root.as_str());
 
-                    for series in series_list{
+                    for series in &self.series_list{
                         let series_image = SeriesImages{
                             name: series.0.clone(),
                             path: series.1.clone(),
