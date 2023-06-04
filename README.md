@@ -13,6 +13,10 @@ A simple application to auto manage series on your local storage.
 - [x] GUI
 - [x] Multithreaded image loading
 
+## Disclaimer
+
+The creator this application does not by any means promote piracy of online content. Where the users of this application get theior content from is not a liabilty of the creator of this library. Please use the application at your own caution.
+
 ## Installation
 The application depends on libmpv, so you need to install it first.
 
