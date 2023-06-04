@@ -15,7 +15,7 @@ A simple application to auto manage series on your local storage.
 
 ## Disclaimer
 
-The creator this application does not by any means promote piracy of online content. Where the users of this application get theior content from is not a liabilty of the creator of this library. Please use the application at your own caution.
+The creator of this application does not by any means promote piracy of online content. Where the users of this application get their content from is not a liabilty of the creator of this library. Please use the application at your own caution.
 
 ## Installation
 The application depends on libmpv, so you need to install it first.
