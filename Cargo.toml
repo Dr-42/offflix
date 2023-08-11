@@ -1,6 +1,6 @@
 [package]
 name = "offflix"
-version = "0.2.2"
+version = "0.2.3"
 edition = "2021"
 description = "A simple application to auto manage series on your local storage."
 license = "MIT"
@@ -11,11 +11,11 @@ keywords = ["series", "video", "player", "video-libray", "media-player"]
 [dependencies]
 libmpv-sirno = "2.0.2-fork.1"
 keyboard_query = "0.1.0"
-serde = {version = "1.0.152", features = ["derive"]}
+serde = { version = "1.0.152", features = ["derive"] }
 serde_json = "1.0.91"
 indexmap = "1.7.0"
 rand = "0.8.4"
 eframe = "0.20.0"
-egui_extras = {version = "0.20.0", features = ["image"]}
+egui_extras = { version = "0.20.0", features = ["image"] }
 image = { version = "0.24", features = ["jpeg", "png"] }
-image_search = { version = "0.4.3", features = ["hyper","blocking"] }
+image_search = { version = "0.4.3", features = ["hyper", "blocking"] }
