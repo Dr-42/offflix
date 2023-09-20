@@ -133,6 +133,8 @@ impl Series {
             self.last_watched += 1;
             episode_path = self.get_episode_path(self.season_watching, self.last_watched);
         }
+        self.seasons[self.season_watching as usize].episodes[self.last_watched as usize]
+            .times_watched += 1;
         let (finished, time) = super::media_player::run(episode_path, 0.);
         self.time_watched = time;
         if finished {
@@ -154,6 +156,7 @@ impl Series {
         }
         self.season_watching = season;
         self.last_watched = episode;
+        self.seasons[season as usize].episodes[episode as usize].times_watched += 1;
         let episode_path = self.get_episode_path(season, episode);
         let (finished, time) = super::media_player::run(episode_path, 0.);
         self.time_watched = time;
