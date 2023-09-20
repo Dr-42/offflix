@@ -3,3 +3,5 @@ session
 root.conf
 /images
 /meta
+*.mp4
+*.mkv

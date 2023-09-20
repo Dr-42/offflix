@@ -1,6 +1,6 @@
 [package]
 name = "offflix"
-version = "0.2.3"
+version = "0.2.4"
 edition = "2021"
 description = "A simple application to auto manage series on your local storage."
 license = "MIT"
