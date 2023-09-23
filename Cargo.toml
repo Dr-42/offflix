@@ -1,6 +1,6 @@
 [package]
 name = "offflix"
-version = "0.2.4"
+version = "1.0.0"
 edition = "2021"
 description = "A simple application to auto manage series on your local storage."
 license = "MIT"
@@ -19,3 +19,4 @@ eframe = "0.20.0"
 egui_extras = { version = "0.20.0", features = ["image"] }
 image = { version = "0.24", features = ["jpeg", "png"] }
 image_search = { version = "0.4.3", features = ["hyper", "blocking"] }
+directories = "5.0.1"
