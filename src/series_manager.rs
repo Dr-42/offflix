@@ -2,7 +2,10 @@ use indexmap::IndexMap;
 use rand::Rng;
 use serde::{Deserialize, Serialize};
 use serde_json;
-use std::{fs::*, path::PathBuf};
+use std::{
+    fs::*,
+    path::{Path, PathBuf},
+};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Series {
@@ -17,7 +20,7 @@ pub struct Series {
 
 impl Series {
     fn new(path: String) -> Series {
-        let series_name = std::path::Path::new(&path)
+        let series_name = Path::new(&path)
             .file_name()
             .unwrap()
             .to_str()
@@ -73,23 +76,23 @@ impl Series {
         };
     }
 
-    pub fn save_series(&self) {
+    pub fn save_series(&self, meta_path: &PathBuf) {
         let series_json = serde_json::to_string(self).unwrap();
         //Save the json to series folder
-        let path = "./meta/".to_string() + self.series_name.as_str() + ".json";
-        if !std::path::Path::exists(std::path::Path::new("./meta/")) {
-            std::fs::create_dir_all("./meta/").unwrap();
+        let path = meta_path.join(Path::new(&self.series_name).with_extension("json"));
+        if !meta_path.exists() {
+            std::fs::create_dir_all(meta_path).expect("Unable to create metadata directory");
         }
         std::fs::write(path, series_json).unwrap();
     }
 
     pub fn verify_series_meta(&self) -> bool {
         for season in &self.seasons {
-            if !std::path::Path::new(&season.path).exists() {
+            if !Path::new(&season.path).exists() {
                 return false;
             }
             for episode in &season.episodes {
-                if !std::path::Path::new(episode.episode_path.as_str()).exists() {
+                if !Path::new(episode.episode_path.as_str()).exists() {
                     return false;
                 }
             }
@@ -105,18 +108,18 @@ impl Series {
         return episode_path;
     }
 
-    pub fn resume_series(&mut self) {
+    pub fn resume_series(&mut self, meta_path: &PathBuf) {
         let episode_path = self.get_episode_path(self.season_watching, self.last_watched);
         let (finished, time) = super::media_player::run(episode_path, self.time_watched);
         self.time_watched = time;
         if finished {
-            self.next_episode();
+            self.next_episode(meta_path);
         } else {
-            self.save_series();
+            self.save_series(meta_path);
         }
     }
 
-    pub fn next_episode(&mut self) -> bool {
+    pub fn next_episode(&mut self, meta_path: &PathBuf) -> bool {
         let episode_path;
         if self.last_watched + 1
             == self.seasons[self.season_watching as usize].episodes.len() as u64
@@ -138,14 +141,14 @@ impl Series {
         let (finished, time) = super::media_player::run(episode_path, 0.);
         self.time_watched = time;
         if finished {
-            return self.next_episode();
+            return self.next_episode(meta_path);
         } else {
-            self.save_series();
+            self.save_series(meta_path);
             return true;
         }
     }
 
-    pub fn watch_episode(&mut self, season: u64, episode: u64) {
+    pub fn watch_episode(&mut self, season: u64, episode: u64, meta_path: &PathBuf) {
         if season > self.seasons.len() as u64 {
             println!("Season {} does not exist", season);
             return;
@@ -161,13 +164,13 @@ impl Series {
         let (finished, time) = super::media_player::run(episode_path, 0.);
         self.time_watched = time;
         if finished {
-            self.next_episode();
+            self.next_episode(meta_path);
         } else {
-            self.save_series();
+            self.save_series(meta_path);
         }
     }
 
-    pub fn play_random_episode(&mut self) {
+    pub fn play_random_episode(&mut self, meta_path: &PathBuf) {
         /*
         let season = rand::thread_rng().gen_range(0 .. self.seasons.len());
         let episode = rand::thread_rng().gen_range(0 .. self.seasons[season].episodes.len());
@@ -197,9 +200,9 @@ impl Series {
         let (finished, time) = super::media_player::run(episode_path, 0.);
         self.time_watched = time;
         if finished {
-            self.next_episode();
+            self.next_episode(meta_path);
         } else {
-            self.save_series();
+            self.save_series(meta_path);
         }
     }
 }
@@ -242,16 +245,16 @@ impl Episode {
     }
 }
 
-pub fn load_series_meta(series_name: &str, series_path: &str) -> Series {
-    let path = "meta/".to_string() + series_name + ".json";
-    if std::path::Path::new(&path).exists() {
-        println!("Loading series meta from: {}", path);
+pub fn load_series_meta(series_name: &str, series_path: &str, meta_path: &PathBuf) -> Series {
+    let path = meta_path.join(Path::new(series_name).with_extension("json"));
+    if path.exists() {
+        println!("Loading series meta from: {}", path.to_str().unwrap());
         let series_json = match std::fs::read_to_string(path.clone()) {
             Ok(series_json) => series_json,
             Err(_) => {
                 println!("Error reading json");
                 let series = Series::new(series_path.to_owned());
-                series.save_series();
+                series.save_series(meta_path);
                 return series;
             }
         };
@@ -261,22 +264,28 @@ pub fn load_series_meta(series_name: &str, series_path: &str) -> Series {
         } else {
             println!("Series meta mismatch, creating new one...");
             let series = Series::new(series_path.to_owned());
-            series.save_series();
+            series.save_series(meta_path);
             return series;
         }
     } else {
         println!("Series meta not found, creating new one...");
         let series = Series::new(series_path.to_owned());
-        series.save_series();
+        series.save_series(meta_path);
         return series;
     }
 }
 
-pub fn update_series(series: &mut Series, season: u64, episode: u64, time: f64) -> &mut Series {
+pub fn update_series<'a, 'b>(
+    series: &'a mut Series,
+    season: u64,
+    episode: u64,
+    time: f64,
+    meta_path: &'b PathBuf,
+) -> &'a mut Series {
     series.season_watching = season;
     series.last_watched = episode;
     series.time_watched = time;
-    series.save_series();
+    series.save_series(meta_path);
     series
 }
 
@@ -300,14 +309,14 @@ pub fn get_series_list(series_root: &PathBuf) -> IndexMap<String, String> {
     series_list
 }
 
-pub fn save_session(series: &Series) {
+pub fn save_session(series: &Series, session_path: &PathBuf) {
     let current_series = series.series_name.as_str();
-    std::fs::write("session", current_series).unwrap();
+    std::fs::write(session_path, current_series).unwrap();
 }
 
-pub fn get_last_session() -> Option<String> {
-    if std::path::Path::new("session").exists() {
-        let session = std::fs::read_to_string("session").unwrap();
+pub fn get_last_session(session_path: &PathBuf) -> Option<String> {
+    if session_path.exists() {
+        let session = std::fs::read_to_string(session_path).unwrap();
         return Some(session);
     }
     None

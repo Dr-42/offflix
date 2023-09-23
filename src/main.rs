@@ -1,4 +1,4 @@
-//#![windows_subsystem = "windows"]
+#![windows_subsystem = "windows"]
 
 use directories::ProjectDirs;
 use std::path::Path;

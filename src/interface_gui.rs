@@ -1,4 +1,4 @@
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 use super::series_manager;
 use eframe::{
@@ -17,8 +17,8 @@ use indexmap::IndexMap;
 pub struct SeriesImages {
     pub name: String,
     pub path: String,
-    pub banner: String,
-    pub block: String,
+    pub banner: PathBuf,
+    pub block: PathBuf,
     pub banner_image: Option<RetainedImage>,
     pub block_image: Option<RetainedImage>,
 }
@@ -203,16 +203,28 @@ impl eframe::App for MyEguiApp {
                         let series_image = SeriesImages {
                             name: series.0.clone(),
                             path: series.1.clone(),
-                            block: format!("images/{}/{}0.jpg", "blocks", series.0.as_str()),
-                            banner: format!("images/{}/{}0.jpg", "banners", series.0.as_str()),
+                            block: self
+                                .images_path
+                                .join("blocks")
+                                .join(&format!("{}0", series.0.clone()))
+                                .with_extension("jpg"),
+                            //block: format!("images/{}/{}0.jpg", "blocks", series.0.as_str()),
+                            banner: self
+                                .images_path
+                                .join("banners")
+                                .join(&format!("{}0", series.0.clone()))
+                                .with_extension("jpg"),
+                            //banner: format!("images/{}/{}0.jpg", "banners", series.0.as_str()),
                             block_image: None,
                             banner_image: None,
                         };
 
                         let name = series_image.name.clone();
+                        let images_path = self.images_path.clone();
                         self.threads.push(std::thread::spawn(move || {
-                            verify_image(name.as_str(), ImageType::Banner).unwrap();
-                            verify_image(name.clone().as_str(), ImageType::Block).unwrap();
+                            verify_image(name.as_str(), ImageType::Banner, &images_path).unwrap();
+                            verify_image(name.clone().as_str(), ImageType::Block, &images_path)
+                                .unwrap();
                         }));
                         self.images.push(series_image);
                         self.thread_count += 1;
@@ -235,7 +247,10 @@ impl eframe::App for MyEguiApp {
                     for image in &mut self.images {
                         let banner_image = RetainedImage::from_image_bytes(
                             "banner",
-                            &std::fs::read(image.banner.clone()).unwrap(),
+                            &std::fs::read(image.banner.clone()).expect(&format!(
+                                "Unable to read banner image {}",
+                                image.banner.clone().to_str().unwrap()
+                            )),
                         );
                         let block_image = RetainedImage::from_image_bytes(
                             "block",
@@ -266,10 +281,11 @@ impl eframe::App for MyEguiApp {
             if !self.loading {
                 ui.style_mut().text_styles = self.style.text_styles.clone();
 
-                let last_series_name = match super::series_manager::get_last_session() {
-                    Some(last_series_name) => last_series_name,
-                    None => self.series_list.keys().next().unwrap().to_string(),
-                };
+                let last_series_name =
+                    match super::series_manager::get_last_session(&self.session_path) {
+                        Some(last_series_name) => last_series_name,
+                        None => self.series_list.keys().next().unwrap().to_string(),
+                    };
 
                 let mut banner_index: usize = 0;
 
@@ -309,7 +325,7 @@ impl eframe::App for MyEguiApp {
                     let next_button = egui::Button::new("Next");
                     let next_button = ui.put(self.banner_next_rect, next_button);
                     if next_button.clicked() {
-                        let series_name = series_manager::get_last_session();
+                        let series_name = series_manager::get_last_session(&self.session_path);
                         let (ser_name, ser_path);
                         if series_name.is_some() {
                             (ser_name, ser_path) = self
@@ -322,8 +338,9 @@ impl eframe::App for MyEguiApp {
                                 .get_key_value(self.images[0].name.as_str())
                                 .unwrap();
                         }
-                        let mut series = series_manager::load_series_meta(ser_name, ser_path);
-                        let next_left = series.next_episode();
+                        let mut series =
+                            series_manager::load_series_meta(ser_name, ser_path, &self.meta_path);
+                        let next_left = series.next_episode(&self.meta_path);
                         if !next_left {
                             self.info_string = format!(
                                 "{} : {}",
@@ -331,13 +348,13 @@ impl eframe::App for MyEguiApp {
                             );
                             self.info_win_open = true;
                         }
-                        series_manager::save_session(&series);
+                        series_manager::save_session(&series, &self.session_path);
                     }
 
                     let resume_button = egui::Button::new("Resume");
                     let resume_button = ui.put(self.banner_resume_rect, resume_button);
                     if resume_button.clicked() {
-                        let series_name = series_manager::get_last_session();
+                        let series_name = series_manager::get_last_session(&self.session_path);
                         let (ser_name, ser_path);
                         if series_name.is_some() {
                             (ser_name, ser_path) = self
@@ -350,15 +367,16 @@ impl eframe::App for MyEguiApp {
                                 .get_key_value(self.images[0].name.as_str())
                                 .unwrap();
                         }
-                        let mut series = series_manager::load_series_meta(ser_name, ser_path);
-                        series.resume_series();
-                        series_manager::save_session(&series);
+                        let mut series =
+                            series_manager::load_series_meta(ser_name, ser_path, &self.meta_path);
+                        series.resume_series(&self.meta_path);
+                        series_manager::save_session(&series, &self.session_path);
                     }
 
                     let random_button = egui::Button::new("Random");
                     let random_button = ui.put(self.banner_random_rect, random_button);
                     if random_button.clicked() {
-                        let series_name = series_manager::get_last_session();
+                        let series_name = series_manager::get_last_session(&self.session_path);
                         let (ser_name, ser_path);
                         if series_name.is_some() {
                             (ser_name, ser_path) = self
@@ -371,9 +389,10 @@ impl eframe::App for MyEguiApp {
                                 .get_key_value(self.images[0].name.as_str())
                                 .unwrap();
                         }
-                        let mut series = series_manager::load_series_meta(ser_name, ser_path);
-                        series.play_random_episode();
-                        series_manager::save_session(&series);
+                        let mut series =
+                            series_manager::load_series_meta(ser_name, ser_path, &self.meta_path);
+                        series.play_random_episode(&self.meta_path);
+                        series_manager::save_session(&series, &self.session_path);
                     }
                 }
                 //Search bar
@@ -443,10 +462,15 @@ impl eframe::App for MyEguiApp {
                                                         .unwrap();
                                                     let mut series =
                                                         series_manager::load_series_meta(
-                                                            ser_name, ser_path,
+                                                            ser_name,
+                                                            ser_path,
+                                                            &self.meta_path,
                                                         );
-                                                    series.resume_series();
-                                                    series_manager::save_session(&series);
+                                                    series.resume_series(&self.meta_path);
+                                                    series_manager::save_session(
+                                                        &series,
+                                                        &self.session_path,
+                                                    );
                                                 }
 
                                                 if nex_but.clicked() {
@@ -460,16 +484,22 @@ impl eframe::App for MyEguiApp {
                                                         .unwrap();
                                                     let mut series =
                                                         series_manager::load_series_meta(
-                                                            ser_name, ser_path,
+                                                            ser_name,
+                                                            ser_path,
+                                                            &self.meta_path,
                                                         );
-                                                    let next_left = series.next_episode();
+                                                    let next_left =
+                                                        series.next_episode(&self.meta_path);
                                                     if !next_left {
                                                         self.info_string =
                                                             format!("{} is finished", ser_name);
                                                         self.info_win_open = true;
                                                         println!("{} is finished", ser_name);
                                                     }
-                                                    series_manager::save_session(&series);
+                                                    series_manager::save_session(
+                                                        &series,
+                                                        &self.session_path,
+                                                    );
                                                 }
 
                                                 if rand_but.clicked() {
@@ -483,10 +513,15 @@ impl eframe::App for MyEguiApp {
                                                         .unwrap();
                                                     let mut series =
                                                         series_manager::load_series_meta(
-                                                            ser_name, ser_path,
+                                                            ser_name,
+                                                            ser_path,
+                                                            &self.meta_path,
                                                         );
-                                                    series.play_random_episode();
-                                                    series_manager::save_session(&series);
+                                                    series.play_random_episode(&self.meta_path);
+                                                    series_manager::save_session(
+                                                        &series,
+                                                        &self.session_path,
+                                                    );
                                                 }
 
                                                 if sel_res.clicked() {
@@ -501,6 +536,7 @@ impl eframe::App for MyEguiApp {
                                                     let series = series_manager::load_series_meta(
                                                         self.win_series.as_str(),
                                                         self.win_ser_path.as_str(),
+                                                        &self.meta_path,
                                                     );
 
                                                     self.season_list.clear();
@@ -577,12 +613,17 @@ impl eframe::App for MyEguiApp {
                                 .series_list
                                 .get_key_value(self.win_series.as_str())
                                 .unwrap();
-                            let mut series = series_manager::load_series_meta(series.0, series.1);
+                            let mut series = series_manager::load_series_meta(
+                                series.0,
+                                series.1,
+                                &self.meta_path,
+                            );
                             series.watch_episode(
                                 self.season_selected as u64,
                                 self.episode_selected as u64,
+                                &self.meta_path,
                             );
-                            series_manager::save_session(&series);
+                            series_manager::save_session(&series, &self.session_path);
                             self.win_open = false;
                         }
 
@@ -613,7 +654,7 @@ enum ImageType {
     Banner,
 }
 
-pub fn get_series_images(root: PathBuf) -> Vec<SeriesImages> {
+pub fn get_series_images(root: PathBuf, images_path: PathBuf) -> Vec<SeriesImages> {
     let mut series_images = Vec::new();
     let series_list = series_manager::get_series_list(&root);
 
@@ -621,19 +662,30 @@ pub fn get_series_images(root: PathBuf) -> Vec<SeriesImages> {
         let series_image = SeriesImages {
             name: series.0.clone(),
             path: series.1.clone(),
-            block: format!("images/{}/{}0.jpg", "blocks", series.0.as_str()),
-            banner: format!("images/{}/{}0.jpg", "banners", series.0.as_str()),
+            block: images_path
+                .join("blocks")
+                .join(&format!("{}0", series.0.clone()))
+                .with_extension("jpg"),
+            //block: format!("images/{}/{}0.jpg", "blocks", series.0.as_str()),
+            banner: images_path
+                .join("banners")
+                .join(&format!("{}0", series.0.clone()))
+                .with_extension("jpg"),
             block_image: None,
             banner_image: None,
         };
-        verify_image(&series_image.name, ImageType::Banner).unwrap();
-        verify_image(&series_image.name, ImageType::Block).unwrap();
+        verify_image(&series_image.name, ImageType::Banner, &images_path).unwrap();
+        verify_image(&series_image.name, ImageType::Block, &images_path).unwrap();
         series_images.push(series_image);
     }
     series_images
 }
 
-fn verify_image(name: &str, imgtype: ImageType) -> Result<(), image_search::Error> {
+fn verify_image(
+    name: &str,
+    imgtype: ImageType,
+    images_path: &PathBuf,
+) -> Result<(), image_search::Error> {
     use image_search::{
         blocking::{download, search, urls},
         Arguments,
@@ -642,8 +694,10 @@ fn verify_image(name: &str, imgtype: ImageType) -> Result<(), image_search::Erro
         ImageType::Banner => "banners",
         ImageType::Block => "blocks",
     };
-    let image_path = format!("images/{}/{}0.jpg", path_type, name);
-    let image_path = Path::new(&image_path);
+    let image_path = images_path
+        .join(path_type)
+        .join(&format!("{}0", name))
+        .with_extension("jpg");
     if !image_path.exists() {
         println!("{} does not exist", image_path.display());
         match imgtype {
@@ -651,7 +705,7 @@ fn verify_image(name: &str, imgtype: ImageType) -> Result<(), image_search::Erro
                 let args = Arguments::new(name, 1)
                     .ratio(image_search::Ratio::Wide)
                     .format(image_search::Format::Jpg)
-                    .directory(PathBuf::from("images/banners")); // Only affects the download function
+                    .directory(images_path.join("banners")); // Only affects the download function
 
                 let _image_urls = urls(args.clone())?;
                 let _images = search(args.clone())?;
@@ -662,7 +716,7 @@ fn verify_image(name: &str, imgtype: ImageType) -> Result<(), image_search::Erro
                     .ratio(image_search::Ratio::Square)
                     .image_type(image_search::ImageType::Photo)
                     .format(image_search::Format::Jpg)
-                    .directory(PathBuf::from("images/blocks")); // Only affects the download function
+                    .directory(images_path.join("blocks")); // Only affects the download function
 
                 let _image_urls = urls(args.clone())?;
                 let _images = search(args.clone())?;
