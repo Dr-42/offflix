@@ -2,7 +2,7 @@ use indexmap::IndexMap;
 use rand::Rng;
 use serde::{Deserialize, Serialize};
 use serde_json;
-use std::fs::*;
+use std::{fs::*, path::PathBuf};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Series {
@@ -280,7 +280,7 @@ pub fn update_series(series: &mut Series, season: u64, episode: u64, time: f64) 
     series
 }
 
-pub fn get_series_list(series_root: &str) -> IndexMap<String, String> {
+pub fn get_series_list(series_root: &PathBuf) -> IndexMap<String, String> {
     let mut series_list = IndexMap::new();
     let serieses = read_dir(series_root).unwrap();
     for series in serieses {

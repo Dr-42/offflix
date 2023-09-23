@@ -23,7 +23,7 @@ pub struct SeriesImages {
     pub block_image: Option<RetainedImage>,
 }
 
-pub fn run(root: String) {
+pub fn run(root: PathBuf, config_dir: PathBuf) {
     let mut native_options = eframe::NativeOptions::default();
 
     native_options.initial_window_size = Some(egui::Vec2::new(800.0, 600.0));
@@ -31,12 +31,15 @@ pub fn run(root: String) {
     run_native(
         "Offflix",
         native_options,
-        Box::new(|cc| Box::new(MyEguiApp::new(cc, root))),
+        Box::new(|cc| Box::new(MyEguiApp::new(cc, root, config_dir))),
     );
 }
 
 struct MyEguiApp {
-    root: String,
+    root: PathBuf,
+    meta_path: PathBuf,
+    images_path: PathBuf,
+    session_path: PathBuf,
     images: Vec<SeriesImages>,
     loading: bool,
     thread_count: usize,
@@ -72,7 +75,7 @@ struct MyEguiApp {
 }
 
 impl MyEguiApp {
-    fn new(cc: &eframe::CreationContext<'_>, root: String) -> Self {
+    fn new(cc: &eframe::CreationContext<'_>, root: PathBuf, config_dir: PathBuf) -> Self {
         let mut style = (*cc.egui_ctx.style()).clone();
         style.text_styles = [
             (Button, FontId::new(24.0, Proportional)),
@@ -127,10 +130,17 @@ impl MyEguiApp {
         let win_series = String::new();
         let win_ser_path = String::new();
 
-        let series_list = series_manager::get_series_list(root.as_str());
+        let series_list = series_manager::get_series_list(&root);
+
+        let meta_path = config_dir.join("meta");
+        let images_path = config_dir.join("images");
+        let session_path = config_dir.join("session.conf");
 
         MyEguiApp {
             root,
+            meta_path,
+            images_path,
+            session_path,
             images,
             loading,
             thread_count,
@@ -187,7 +197,7 @@ impl eframe::App for MyEguiApp {
                 ui.put(self.progress_bar_rect, progress_bar);
                 ui.put(self.spin_rect, spin);
                 if self.frame_count == 1 {
-                    let series_list = series_manager::get_series_list(self.root.as_str());
+                    let series_list = series_manager::get_series_list(&self.root);
 
                     for series in series_list {
                         let series_image = SeriesImages {
@@ -603,9 +613,9 @@ enum ImageType {
     Banner,
 }
 
-pub fn get_series_images(root: &str) -> Vec<SeriesImages> {
+pub fn get_series_images(root: PathBuf) -> Vec<SeriesImages> {
     let mut series_images = Vec::new();
-    let series_list = series_manager::get_series_list(root);
+    let series_list = series_manager::get_series_list(&root);
 
     for series in series_list {
         let series_image = SeriesImages {

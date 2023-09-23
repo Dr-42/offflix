@@ -17,5 +17,6 @@ fn main() {
         offflix::get_root::run(root_path.clone());
     }
     let root = std::fs::read_to_string(&root_path).expect("Unable to read file");
-    offflix::interface_gui::run(root);
+    let root = Path::new(&root).to_owned();
+    offflix::interface_gui::run(root, config_dir);
 }
