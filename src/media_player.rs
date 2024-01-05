@@ -1,7 +1,13 @@
-use std::{fs::File, io::{Read, Seek, SeekFrom}, mem};
 use libmpv::{protocol::*, *};
+use std::{
+    fs::File,
+    io::{Read, Seek, SeekFrom},
+    mem,
+};
 
-pub fn run(path: String, resume_time: f64) -> (bool, f64){
+use crate::key_controls::set_keybindings;
+
+pub fn run(path: String, resume_time: f64) -> (bool, f64) {
     let protocol = unsafe {
         Protocol::new(
             "filereader".into(),
@@ -24,14 +30,14 @@ pub fn run(path: String, resume_time: f64) -> (bool, f64){
         Err(e) => println!("Error loading file: {}", e),
     }
 
-
     std::thread::sleep(std::time::Duration::from_millis(1000));
+    set_keybindings(&mpv);
     mpv.set_property("keep-open", true).unwrap();
-    match mpv.set_property("time-pos", resume_time){
+    match mpv.set_property("time-pos", resume_time) {
         Ok(_) => println!("Resuming at {}", resume_time),
         Err(_e) => {
             std::thread::sleep(std::time::Duration::from_millis(1000));
-            match mpv.set_property("time-pos", resume_time){
+            match mpv.set_property("time-pos", resume_time) {
                 Ok(_) => println!("Resuming at {}", resume_time),
                 Err(e) => {
                     println!("Error resuming: {}", e)
@@ -72,3 +78,4 @@ fn seek(cookie: &mut File, offset: i64) -> i64 {
 fn size(cookie: &mut File) -> i64 {
     cookie.metadata().unwrap().len() as _
 }
+
