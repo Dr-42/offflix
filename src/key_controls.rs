@@ -2,21 +2,21 @@ use keyboard_query::{self, DeviceQuery, DeviceState};
 use std::collections::HashMap;
 
 struct MyKeys {
-    esc:u16,
-    f:u16,
-    space:u16,
-    left:u16,
-    right:u16,
-    up:u16,
-    down:u16,
-    a:u16,
-    v:u16,
-    s:u16,
-    ctrl:u16,
-    shift:u16,
+    esc: u16,
+    f: u16,
+    space: u16,
+    left: u16,
+    right: u16,
+    up: u16,
+    down: u16,
+    a: u16,
+    v: u16,
+    s: u16,
+    ctrl: u16,
+    shift: u16,
 }
 
-fn get_tracks(mpv: &libmpv::Mpv) -> HashMap<String, i64>{
+fn get_tracks(mpv: &libmpv::Mpv) -> HashMap<String, i64> {
     let mut tracks = HashMap::new();
     let track_count = mpv.get_property::<i64>("track-list/count").unwrap();
     println!("Track count : {}", track_count);
@@ -24,7 +24,11 @@ fn get_tracks(mpv: &libmpv::Mpv) -> HashMap<String, i64>{
     let mut sub_count = 0;
     let mut video_count = 0;
     for i in 0..track_count {
-        let track_type = mpv.get_property::<String>(("track-list/".to_owned() + i.to_string().as_str() + "/type").as_str()).unwrap();
+        let track_type = mpv
+            .get_property::<String>(
+                ("track-list/".to_owned() + i.to_string().as_str() + "/type").as_str(),
+            )
+            .unwrap();
         if track_type == "audio" {
             audio_count += 1;
         } else if track_type == "sub" {
@@ -43,37 +47,36 @@ fn get_tracks(mpv: &libmpv::Mpv) -> HashMap<String, i64>{
 }
 
 pub fn handle_window_events(mpv: &libmpv::Mpv) -> (bool, f64) {
-
     #[cfg(target_os = "windows")]
     let mk = MyKeys {
-        esc : 27,
-        f : 70,
-        space : 32,
-        left : 37,
-        right : 39,
-        up : 38,
-        down : 40,
-        a : 65,
-        v : 86,
-        s : 83,
-        ctrl : 17,
-        shift : 16,
+        esc: 27,
+        f: 70,
+        space: 32,
+        left: 37,
+        right: 39,
+        up: 38,
+        down: 40,
+        a: 65,
+        v: 86,
+        s: 83,
+        ctrl: 17,
+        shift: 16,
     };
 
     #[cfg(target_os = "linux")]
-    let mk = MyKeys{
-        esc : 1,
-        f : 33,
-        space : 57,
-        left : 105,
-        right : 106,
-        up : 103,
-        down : 108,
-        a : 30,
-        v : 47,
-        s : 31,
-        ctrl : 29,
-        shift : 42,
+    let mk = MyKeys {
+        esc: 1,
+        f: 33,
+        space: 57,
+        left: 105,
+        right: 106,
+        up: 103,
+        down: 108,
+        a: 30,
+        v: 47,
+        s: 31,
+        ctrl: 29,
+        shift: 42,
     };
 
     let device_state = DeviceState::new();
@@ -82,37 +85,38 @@ pub fn handle_window_events(mpv: &libmpv::Mpv) -> (bool, f64) {
     let mut fullscreen = false;
 
     std::thread::sleep(std::time::Duration::from_millis(1000));
-    let track_details = get_tracks(&mpv);
+    let track_details = get_tracks(mpv);
     let mut audio_track = 1;
     let mut sub_track = 1;
     let mut video_track = 1;
     let mut sub_enabled = false;
     let mut audio_enabled = true;
 
-    loop{
+    let mut prev_time = 0.0;
+    let mut event_context = mpv.create_event_context();
+    event_context
+        .enable_event(libmpv::events::mpv_event_id::Shutdown)
+        .unwrap();
+
+    loop {
+        if let Some(Ok(libmpv::events::Event::Shutdown)) = event_context.wait_event(0.0) {
+            return (false, prev_time);
+        }
+
+        prev_time = mpv.get_property("time-pos").unwrap_or(prev_time);
         //if media player is closed, return the time
-        let end_result = mpv.get_property("eof-reached").unwrap();
+        let end_result = mpv.get_property("eof-reached").unwrap_or(false);
         if end_result {
             return (true, 0.0);
         }
         let keys = device_state.get_keys();
         let focus_result = mpv.get_property("focused");
-        let focused : bool;
-        match focus_result {
-            Ok(focus_result) => {
-                focused = focus_result;
-            },
-            Err(_) => {
-                focused = false;
-            }
-        }
+        let focused = focus_result.unwrap_or(false);
+
         if focused {
-            if keys != prev_keys && keys.len() > 0 {
+            if keys != prev_keys && !keys.is_empty() {
                 if keys[0] == mk.esc {
-                    let time: f64 = match mpv.get_property("time-pos") {
-                        Ok(time) => time,
-                        Err(_) => 0.0,
-                    };
+                    let time: f64 = mpv.get_property("time-pos").unwrap_or(0.0);
                     return (false, time);
                 } else if keys[0] == mk.f {
                     if fullscreen {
@@ -170,7 +174,7 @@ pub fn handle_window_events(mpv: &libmpv::Mpv) -> (bool, f64) {
                             mpv.seek_backward(1.).unwrap();
                         } else if keys[1] == mk.right {
                             mpv.seek_forward(1.).unwrap();
-                        }else if keys[1] == mk.s {
+                        } else if keys[1] == mk.s {
                             if sub_track > 1 {
                                 sub_track -= 1;
                             } else {
