@@ -24,10 +24,11 @@ pub struct SeriesImages {
 }
 
 pub fn run(root: PathBuf, config_dir: PathBuf) {
-    let mut native_options = eframe::NativeOptions::default();
-
-    native_options.initial_window_size = Some(egui::Vec2::new(800.0, 600.0));
-    native_options.resizable = false;
+    let native_options = eframe::NativeOptions {
+        initial_window_size: Some(egui::Vec2::new(800.0, 600.0)),
+        resizable: false,
+        ..Default::default()
+    };
     run_native(
         "Offflix",
         native_options,
@@ -178,7 +179,7 @@ impl MyEguiApp {
 }
 
 impl eframe::App for MyEguiApp {
-    fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+    fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
         egui::CentralPanel::default().show(ctx, |ui| {
             if self.loading {
                 ui.style_mut().text_styles = self.style.text_styles.clone();
@@ -325,6 +326,7 @@ impl eframe::App for MyEguiApp {
                     let next_button = egui::Button::new("Next");
                     let next_button = ui.put(self.banner_next_rect, next_button);
                     if next_button.clicked() {
+                        frame.set_visible(false);
                         let series_name = series_manager::get_last_session(&self.session_path);
                         let (ser_name, ser_path);
                         if series_name.is_some() {
@@ -342,6 +344,7 @@ impl eframe::App for MyEguiApp {
                             series_manager::load_series_meta(ser_name, ser_path, &self.meta_path);
                         let next_left = series.next_episode(&self.meta_path);
                         if !next_left {
+                            frame.set_visible(true);
                             self.info_string = format!(
                                 "{} : {}",
                                 "You have finished watching", series.series_name
@@ -349,11 +352,13 @@ impl eframe::App for MyEguiApp {
                             self.info_win_open = true;
                         }
                         series_manager::save_session(&series, &self.session_path);
+                        frame.set_visible(true);
                     }
 
                     let resume_button = egui::Button::new("Resume");
                     let resume_button = ui.put(self.banner_resume_rect, resume_button);
                     if resume_button.clicked() {
+                        frame.set_visible(false);
                         let series_name = series_manager::get_last_session(&self.session_path);
                         let (ser_name, ser_path);
                         if series_name.is_some() {
@@ -371,11 +376,13 @@ impl eframe::App for MyEguiApp {
                             series_manager::load_series_meta(ser_name, ser_path, &self.meta_path);
                         series.resume_series(&self.meta_path);
                         series_manager::save_session(&series, &self.session_path);
+                        frame.set_visible(true);
                     }
 
                     let random_button = egui::Button::new("Random");
                     let random_button = ui.put(self.banner_random_rect, random_button);
                     if random_button.clicked() {
+                        frame.set_visible(false);
                         let series_name = series_manager::get_last_session(&self.session_path);
                         let (ser_name, ser_path);
                         if series_name.is_some() {
@@ -393,6 +400,7 @@ impl eframe::App for MyEguiApp {
                             series_manager::load_series_meta(ser_name, ser_path, &self.meta_path);
                         series.play_random_episode(&self.meta_path);
                         series_manager::save_session(&series, &self.session_path);
+                        frame.set_visible(true);
                     }
                 }
                 //Search bar
@@ -452,6 +460,7 @@ impl eframe::App for MyEguiApp {
                                                 let sel_res = ui.button("select episode");
 
                                                 if res_but.clicked() {
+                                                    frame.set_visible(false);
                                                     let (ser_name, ser_path) = self
                                                         .series_list
                                                         .get_key_value(
@@ -471,9 +480,11 @@ impl eframe::App for MyEguiApp {
                                                         &series,
                                                         &self.session_path,
                                                     );
+                                                    frame.set_visible(true);
                                                 }
 
                                                 if nex_but.clicked() {
+                                                    frame.set_visible(false);
                                                     let (ser_name, ser_path) = self
                                                         .series_list
                                                         .get_key_value(
@@ -491,6 +502,7 @@ impl eframe::App for MyEguiApp {
                                                     let next_left =
                                                         series.next_episode(&self.meta_path);
                                                     if !next_left {
+                                                        frame.set_visible(true);
                                                         self.info_string =
                                                             format!("{} is finished", ser_name);
                                                         self.info_win_open = true;
@@ -500,9 +512,11 @@ impl eframe::App for MyEguiApp {
                                                         &series,
                                                         &self.session_path,
                                                     );
+                                                    frame.set_visible(true);
                                                 }
 
                                                 if rand_but.clicked() {
+                                                    frame.set_visible(false);
                                                     let (ser_name, ser_path) = self
                                                         .series_list
                                                         .get_key_value(
@@ -522,6 +536,7 @@ impl eframe::App for MyEguiApp {
                                                         &series,
                                                         &self.session_path,
                                                     );
+                                                    frame.set_visible(true);
                                                 }
 
                                                 if sel_res.clicked() {
@@ -609,6 +624,7 @@ impl eframe::App for MyEguiApp {
                         let cl_but = ui.button("Close");
 
                         if pl_but.clicked() {
+                            frame.set_visible(false);
                             let series = self
                                 .series_list
                                 .get_key_value(self.win_series.as_str())
@@ -624,6 +640,7 @@ impl eframe::App for MyEguiApp {
                                 &self.meta_path,
                             );
                             series_manager::save_session(&series, &self.session_path);
+                            frame.set_visible(true);
                             self.win_open = false;
                         }
 
