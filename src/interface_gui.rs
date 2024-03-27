@@ -248,14 +248,11 @@ impl eframe::App for MyEguiApp {
                     for image in &mut self.images {
                         let banner_image = RetainedImage::from_image_bytes(
                             "banner",
-                            &std::fs::read(image.banner.clone()).expect(&format!(
-                                "Unable to read banner image {}",
-                                image.banner.clone().to_str().unwrap()
-                            )),
+                            &std::fs::read(image.banner.clone()).unwrap_or_default(),
                         );
                         let block_image = RetainedImage::from_image_bytes(
                             "block",
-                            &std::fs::read(image.block.clone()).unwrap(),
+                            &std::fs::read(image.block.clone()).unwrap_or_default(),
                         );
                         match banner_image {
                             Ok(banner_image) => image.banner_image = Some(banner_image),
