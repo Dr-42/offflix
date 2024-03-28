@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use super::series_manager;
 use eframe::{
@@ -698,7 +698,7 @@ pub fn get_series_images(root: PathBuf, images_path: PathBuf) -> Vec<SeriesImage
 fn verify_image(
     name: &str,
     imgtype: ImageType,
-    images_path: &PathBuf,
+    images_path: &Path,
 ) -> Result<(), image_search::Error> {
     use image_search::{
         blocking::{download, search, urls},
@@ -710,7 +710,7 @@ fn verify_image(
     };
     let image_path = images_path
         .join(path_type)
-        .join(&format!("{}0", name))
+        .join(format!("{}0", name))
         .with_extension("jpg");
     if !image_path.exists() {
         println!("{} does not exist", image_path.display());
@@ -721,9 +721,18 @@ fn verify_image(
                     .format(image_search::Format::Jpg)
                     .directory(images_path.join("banners")); // Only affects the download function
 
-                let _image_urls = urls(args.clone())?;
-                let _images = search(args.clone())?;
-                let _paths = download(args)?;
+                let image_urls = urls(args.clone());
+                let images = search(args.clone());
+                let paths = download(args);
+                if let Err(e) = image_urls {
+                    println!("Error: {}", e);
+                }
+                if let Err(e) = images {
+                    println!("Error: {}", e);
+                }
+                if let Err(e) = paths {
+                    println!("Error: {}", e);
+                }
             }
             ImageType::Block => {
                 let args = Arguments::new(name, 1)
@@ -732,9 +741,18 @@ fn verify_image(
                     .format(image_search::Format::Jpg)
                     .directory(images_path.join("blocks")); // Only affects the download function
 
-                let _image_urls = urls(args.clone())?;
-                let _images = search(args.clone())?;
-                let _paths = download(args)?;
+                let image_urls = urls(args.clone());
+                let images = search(args.clone());
+                let paths = download(args);
+                if let Err(e) = image_urls {
+                    println!("Error: {}", e);
+                }
+                if let Err(e) = images {
+                    println!("Error: {}", e);
+                }
+                if let Err(e) = paths {
+                    println!("Error: {}", e);
+                }
             }
         }
     }
