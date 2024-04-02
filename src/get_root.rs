@@ -2,8 +2,10 @@ use eframe::{egui, run_native};
 use std::path::PathBuf;
 
 pub fn run(root_path: PathBuf) {
-    let mut native_options = eframe::NativeOptions::default();
-    native_options.initial_window_size = Some(egui::Vec2::new(400.0, 160.0));
+    let native_options = eframe::NativeOptions {
+        initial_window_size: Some(egui::Vec2::new(430.0, 160.0)),
+        ..Default::default()
+    };
     run_native(
         "Offlix root selector",
         native_options,
@@ -33,12 +35,21 @@ impl eframe::App for MyEguiApp {
             ui.label("Each series folder should contain a folder for each season");
             ui.label("The software auto downloads album art, so active");
             ui.label("internet connection is required. Art can be manually placed as well");
-            ui.text_edit_singleline(&mut self.root);
-            let button = ui.button("Select");
-            if button.clicked() {
-                std::fs::write(&self.root_path, self.root.clone()).expect("Unable to write file");
-                frame.close();
-            }
+            ui.horizontal(|ui| {
+                ui.text_edit_singleline(&mut self.root);
+                let browse = ui.button("Browse");
+                if browse.clicked() {
+                    if let Some(path) = rfd::FileDialog::new().pick_folder() {
+                        self.root = path.to_string_lossy().to_string();
+                    }
+                }
+                let button = ui.button("Select");
+                if button.clicked() && !self.root.is_empty() {
+                    std::fs::write(&self.root_path, self.root.clone())
+                        .expect("Unable to write file");
+                    frame.close();
+                }
+            });
         });
     }
 }
