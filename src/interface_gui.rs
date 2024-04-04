@@ -1,4 +1,9 @@
-use std::path::{Path, PathBuf};
+use std::{
+    error::Error,
+    path::{Path, PathBuf},
+};
+
+use crate::image_downloader;
 
 use super::series_manager;
 use eframe::{
@@ -221,7 +226,7 @@ impl eframe::App for MyEguiApp {
                         };
 
                         let name = series_image.name.clone();
-                        let images_path = self.images_path.clone();
+                        let images_path = self.images_path.clone().to_string_lossy().to_string();
                         self.threads.push(std::thread::spawn(move || {
                             verify_image(name.as_str(), ImageType::Banner, &images_path).unwrap();
                             verify_image(name.clone().as_str(), ImageType::Block, &images_path)
@@ -663,12 +668,12 @@ impl eframe::App for MyEguiApp {
     }
 }
 
-enum ImageType {
+pub enum ImageType {
     Block,
     Banner,
 }
 
-pub fn get_series_images(root: PathBuf, images_path: PathBuf) -> Vec<SeriesImages> {
+pub fn get_series_images(root: PathBuf, images_path: &str) -> Vec<SeriesImages> {
     let mut series_images = Vec::new();
     let series_list = series_manager::get_series_list(&root);
 
@@ -676,12 +681,12 @@ pub fn get_series_images(root: PathBuf, images_path: PathBuf) -> Vec<SeriesImage
         let series_image = SeriesImages {
             name: series.0.clone(),
             path: series.1.clone(),
-            block: images_path
+            block: Path::new(images_path)
                 .join("blocks")
                 .join(&format!("{}0", series.0.clone()))
                 .with_extension("jpg"),
             //block: format!("images/{}/{}0.jpg", "blocks", series.0.as_str()),
-            banner: images_path
+            banner: Path::new(images_path)
                 .join("banners")
                 .join(&format!("{}0", series.0.clone()))
                 .with_extension("jpg"),
@@ -695,66 +700,17 @@ pub fn get_series_images(root: PathBuf, images_path: PathBuf) -> Vec<SeriesImage
     series_images
 }
 
-fn verify_image(
-    name: &str,
-    imgtype: ImageType,
-    images_path: &Path,
-) -> Result<(), image_search::Error> {
-    use image_search::{
-        blocking::{download, search, urls},
-        Arguments,
-    };
+fn verify_image(name: &str, imgtype: ImageType, images_path: &str) -> Result<(), Box<dyn Error>> {
     let path_type = match imgtype {
         ImageType::Banner => "banners",
         ImageType::Block => "blocks",
-    };
-    let image_path = images_path
-        .join(path_type)
-        .join(format!("{}0", name))
-        .with_extension("jpg");
-    if !image_path.exists() {
-        println!("{} does not exist", image_path.display());
-        match imgtype {
-            ImageType::Banner => {
-                let args = Arguments::new(name, 1)
-                    .ratio(image_search::Ratio::Wide)
-                    .format(image_search::Format::Jpg)
-                    .directory(images_path.join("banners")); // Only affects the download function
-
-                let image_urls = urls(args.clone());
-                let images = search(args.clone());
-                let paths = download(args);
-                if let Err(e) = image_urls {
-                    println!("Error: {}", e);
-                }
-                if let Err(e) = images {
-                    println!("Error: {}", e);
-                }
-                if let Err(e) = paths {
-                    println!("Error: {}", e);
-                }
-            }
-            ImageType::Block => {
-                let args = Arguments::new(name, 1)
-                    .ratio(image_search::Ratio::Square)
-                    .image_type(image_search::ImageType::Photo)
-                    .format(image_search::Format::Jpg)
-                    .directory(images_path.join("blocks")); // Only affects the download function
-
-                let image_urls = urls(args.clone());
-                let images = search(args.clone());
-                let paths = download(args);
-                if let Err(e) = image_urls {
-                    println!("Error: {}", e);
-                }
-                if let Err(e) = images {
-                    println!("Error: {}", e);
-                }
-                if let Err(e) = paths {
-                    println!("Error: {}", e);
-                }
-            }
-        }
+    }
+    .to_string();
+    let image_path = format!("{}/{}/{}0", images_path, path_type, name);
+    let comp_path = format!("{}.jpg", image_path);
+    if !Path::new(&comp_path).exists() {
+        println!("{} does not exist", comp_path);
+        image_downloader::download(name, &image_path, imgtype);
     }
     Ok(())
 }
