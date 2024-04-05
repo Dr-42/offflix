@@ -693,8 +693,8 @@ pub fn get_series_images(root: PathBuf, images_path: &str) -> Vec<SeriesImages> 
             block_image: None,
             banner_image: None,
         };
-        verify_image(&series_image.name, ImageType::Banner, &images_path).unwrap();
-        verify_image(&series_image.name, ImageType::Block, &images_path).unwrap();
+        verify_image(&series_image.name, ImageType::Banner, images_path).unwrap();
+        verify_image(&series_image.name, ImageType::Block, images_path).unwrap();
         series_images.push(series_image);
     }
     series_images
