@@ -10,6 +10,7 @@ use eframe::{
     egui::{
         self,
         FontFamily::Proportional,
+        RichText,
         TextStyle::{Body, Button},
     },
     emath::Align2,
@@ -473,11 +474,14 @@ fn series_view(
                             ui.allocate_ui_at_rect(block_resp.rect, |ui| {
                                 ui.vertical_centered(|ui| {
                                     ui.add_space(50.);
-                                    let lbl = ui.label(filtered_series[i * 3 + j].name.clone());
-                                    ui.painter().rect_filled(
-                                        lbl.rect,
-                                        0.,
-                                        egui::Color32::from_rgba_premultiplied(2, 20, 20, 10),
+                                    ui.label(
+                                        RichText::new(filtered_series[i * 3 + j].name.clone())
+                                            .color(egui::Color32::WHITE)
+                                            .background_color(
+                                                egui::Color32::from_rgba_premultiplied(
+                                                    0, 0, 40, 180,
+                                                ),
+                                            ),
                                     );
                                     let res_but = ui.button("resume");
                                     let nex_but = ui.button("next");
