@@ -23,11 +23,21 @@ fn main() {
         std::fs::create_dir_all(&config_dir).expect("Unable to create config directory");
     }
 
+    if !cache_dir.join("images").exists() {
+        std::fs::create_dir_all(cache_dir.join("images"))
+            .expect("Unable to create cache directory");
+    }
+
     let root_path = config_dir.join(Path::new("root.conf"));
     if !root_path.exists() {
-        get_root::run(root_path.clone());
+        get_root::run(root_path.clone(), Box::new(false));
     }
     let root = std::fs::read_to_string(&root_path).expect("Unable to read file");
     let root = Path::new(&root).to_owned();
+
+    if !root.exists() {
+        get_root::run(root_path.clone(), Box::new(true));
+    }
+
     interface_gui::run(root, config_dir, cache_dir);
 }
