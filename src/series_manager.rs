@@ -49,12 +49,13 @@ impl Series {
                                 .path()
                                 .to_str()
                                 .unwrap()
-                                .replace("\\", "/")
+                                .replace('\\', "/")
                                 .to_string();
                             let episode = Episode::new(episode_number, episode_name, episode_path);
                             seas.episodes.push(episode);
                             episode_number += 1;
                         }
+                        continue;
                     }
                 }
                 seas.season_number = season_num;
@@ -64,7 +65,7 @@ impl Series {
                 season_num += 1;
             }
         }
-        return Series {
+        Series {
             series_name,
             series_path: path,
             seasons: seases,
@@ -72,7 +73,7 @@ impl Series {
             last_watched: 0,
             time_watched: 0.,
             series_image: None,
-        };
+        }
     }
 
     pub fn save_series(&self, meta_path: &PathBuf) {
@@ -96,15 +97,15 @@ impl Series {
                 }
             }
         }
-        return true;
+        true
     }
 
     pub fn get_episode_path(&self, season: u64, episode: u64) -> String {
         let season = season as usize;
         let episode = episode as usize;
         let mut episode_path = self.seasons[season].episodes[episode].episode_path.clone();
-        episode_path = episode_path.replace("\\", "/");
-        return episode_path;
+        episode_path = episode_path.replace('\\', "/");
+        episode_path
     }
 
     pub fn resume_series(&mut self, meta_path: &PathBuf) {
@@ -140,10 +141,10 @@ impl Series {
         let (finished, time) = super::media_player::run(episode_path, 0.);
         self.time_watched = time;
         if finished {
-            return self.next_episode(meta_path);
+            self.next_episode(meta_path)
         } else {
             self.save_series(meta_path);
-            return true;
+            true
         }
     }
 
@@ -179,12 +180,16 @@ impl Series {
 
         for (i, season) in self.seasons.iter().enumerate() {
             for (j, episode) in season.episodes.iter().enumerate() {
-                if episode.times_watched < least_num {
-                    least_num = episode.times_watched;
-                    least_watched.clear();
-                    least_watched.push((i as u64, j as u64));
-                } else if episode.times_watched == least_num {
-                    least_watched.push((i as u64, j as u64));
+                match episode.times_watched.cmp(&least_num) {
+                    std::cmp::Ordering::Less => {
+                        least_num = episode.times_watched;
+                        least_watched.clear();
+                        least_watched.push((i as u64, j as u64));
+                    }
+                    std::cmp::Ordering::Equal => {
+                        least_watched.push((i as u64, j as u64));
+                    }
+                    _ => {}
                 }
             }
         }
@@ -258,34 +263,18 @@ pub fn load_series_meta(series_name: &str, series_path: &str, meta_path: &PathBu
             }
         };
         let series: Series = serde_json::from_str(&series_json).unwrap();
-        if series.verify_series_meta() {
-            return series;
-        } else {
+        if !series.verify_series_meta() {
             println!("Series meta mismatch, creating new one...");
             let series = Series::new(series_path.to_owned());
             series.save_series(meta_path);
-            return series;
         }
+        series
     } else {
         println!("Series meta not found, creating new one...");
         let series = Series::new(series_path.to_owned());
         series.save_series(meta_path);
-        return series;
+        series
     }
-}
-
-pub fn update_series<'a, 'b>(
-    series: &'a mut Series,
-    season: u64,
-    episode: u64,
-    time: f64,
-    meta_path: &'b PathBuf,
-) -> &'a mut Series {
-    series.season_watching = season;
-    series.last_watched = episode;
-    series.time_watched = time;
-    series.save_series(meta_path);
-    series
 }
 
 pub fn get_series_list(series_root: &PathBuf) -> IndexMap<String, String> {
@@ -300,7 +289,7 @@ pub fn get_series_list(series_root: &PathBuf) -> IndexMap<String, String> {
                     .path()
                     .to_str()
                     .unwrap()
-                    .replace("\\", "/")
+                    .replace('\\', "/")
                     .to_string(),
             );
         }
