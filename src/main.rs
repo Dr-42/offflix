@@ -15,6 +15,10 @@ fn main() {
         .unwrap()
         .config_dir()
         .to_owned();
+    let cache_dir = ProjectDirs::from("com", "Dr42Apps", "offflix")
+        .unwrap()
+        .cache_dir()
+        .to_owned();
     if !config_dir.exists() {
         std::fs::create_dir_all(&config_dir).expect("Unable to create config directory");
     }
@@ -25,5 +29,5 @@ fn main() {
     }
     let root = std::fs::read_to_string(&root_path).expect("Unable to read file");
     let root = Path::new(&root).to_owned();
-    interface_gui::run(root, config_dir);
+    interface_gui::run(root, config_dir, cache_dir);
 }

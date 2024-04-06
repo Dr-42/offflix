@@ -3,9 +3,9 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use crate::image_downloader;
-
+use super::image_downloader;
 use super::series_manager;
+
 use eframe::{
     egui::{
         self,
@@ -29,7 +29,7 @@ pub struct SeriesImages {
     pub block_image: Option<RetainedImage>,
 }
 
-pub fn run(root: PathBuf, config_dir: PathBuf) {
+pub fn run(root: PathBuf, config_dir: PathBuf, cache_dir: PathBuf) {
     let native_options = eframe::NativeOptions {
         initial_window_size: Some(egui::Vec2::new(800.0, 600.0)),
         resizable: false,
@@ -38,7 +38,7 @@ pub fn run(root: PathBuf, config_dir: PathBuf) {
     run_native(
         "Offflix",
         native_options,
-        Box::new(|cc| Box::new(MyEguiApp::new(cc, root, config_dir))),
+        Box::new(|cc| Box::new(MyEguiApp::new(cc, root, config_dir, cache_dir))),
     );
 }
 
@@ -98,7 +98,12 @@ struct MyEguiApp {
 }
 
 impl MyEguiApp {
-    fn new(cc: &eframe::CreationContext<'_>, root: PathBuf, config_dir: PathBuf) -> Self {
+    fn new(
+        cc: &eframe::CreationContext<'_>,
+        root: PathBuf,
+        config_dir: PathBuf,
+        cache_dir: PathBuf,
+    ) -> Self {
         let mut style = (*cc.egui_ctx.style()).clone();
         style.text_styles = [
             (Button, FontId::new(24.0, Proportional)),
@@ -156,7 +161,7 @@ impl MyEguiApp {
         let series_list = series_manager::get_series_list(&root);
 
         let meta_path = config_dir.join("meta");
-        let images_path = config_dir.join("images");
+        let images_path = cache_dir.join("images");
         let session_path = config_dir.join("session.conf");
 
         let interface_data = InterfaceData {
@@ -191,7 +196,7 @@ impl MyEguiApp {
             search_bar_buffer,
             block_padding,
         };
-        let popup_data = PopUpData {
+        let pop_up_data = PopUpData {
             win_open,
             info_win_open,
             info_string,
@@ -208,7 +213,7 @@ impl MyEguiApp {
             interface_data,
             loading_data,
             series_view_data,
-            pop_up_data: popup_data,
+            pop_up_data,
         }
     }
 }
