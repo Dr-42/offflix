@@ -1,4 +1,4 @@
-use crate::interface_gui::ImageType;
+use crate::interface_gui::ui_views::ImageType;
 
 fn unpack(mut body: String) -> Option<Vec<String>> {
     let mut images = Vec::new();
