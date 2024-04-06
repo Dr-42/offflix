@@ -460,14 +460,14 @@ pub fn episode_info_popup(
     pop_up_data: &mut PopUpData,
     interface_data: &InterfaceData,
 ) {
-    egui::Window::new("Episode Info")
+    egui::Window::new("Info")
         .default_pos(ctx.available_rect().center())
         .fixed_size(Vec2::new(400., 400.))
         .anchor(Align2::CENTER_CENTER, egui::Vec2::ZERO)
         .show(ctx, |ui| {
             ui.style_mut().text_styles = interface_data.style.text_styles.clone();
             ui.vertical_centered(|ui| {
-                ui.label("Episode Info");
+                ui.label(pop_up_data.info_string.clone());
                 let cl_but = ui.button("Close");
                 if cl_but.clicked() {
                     pop_up_data.info_win_open = false;
