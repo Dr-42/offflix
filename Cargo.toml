@@ -1,6 +1,6 @@
 [package]
 name = "offflix"
-version = "1.1.3"
+version = "1.2.0"
 edition = "2021"
 description = "A simple application to auto manage series on your local storage."
 license = "MIT"
@@ -9,7 +9,7 @@ repository = "https://github.com/Dr-42/offflix"
 keywords = ["series", "video", "player", "video-libray", "media-player"]
 
 [dependencies]
-libmpv-sirno = "2.0.2-fork.1"
+libmpv-sirno = {version = "2.0.2-fork.1", features = ["build_libmpv"]}
 serde = { version = "1.0.152", features = ["derive"] }
 serde_json = "1.0.91"
 indexmap = "1.7.0"
