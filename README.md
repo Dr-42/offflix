@@ -18,29 +18,13 @@ A simple application to auto manage series on your local storage.
 The creator of this application does not by any means promote piracy of online content. Where the users of this application get their content from is not a liabilty of the creator of this library. Please use the application at your own caution.
 
 ## Installation
+
 The application depends on libmpv, so you need to install it first.
 
-### Arch Linux
 ```
-sudo pacman -S mpv
-```
-
-### Ubuntu
-```
-sudo apt install mpv
-```
-### Windows
-
-#### MSYS2
-```
-pacman -S mingw-w64-x86_64-mpv
-```
-
-
-## Usage
-
-```
-cargo run --release
+git clone https://github.com/mpv-player/mpv
+export MPV_SOURCE=$(pwd)/mpv
+cargo install offflix
 ```
 
 ### Media player controls
