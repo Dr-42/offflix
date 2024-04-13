@@ -257,12 +257,22 @@ pub fn load_series_meta(series_name: &str, series_path: &str, meta_path: &PathBu
             Ok(series_json) => series_json,
             Err(_) => {
                 println!("Error reading json");
+                println!("Creating new series meta...");
                 let series = Series::new(series_path.to_owned());
                 series.save_series(meta_path);
                 return series;
             }
         };
-        let series: Series = serde_json::from_str(&series_json).unwrap();
+        let series: Series = match serde_json::from_str(&series_json) {
+            Ok(series_json) => series_json,
+            Err(_) => {
+                println!("Error reading json");
+                println!("Creating new series meta...");
+                let series = Series::new(series_path.to_owned());
+                series.save_series(meta_path);
+                return series;
+            }
+        };
         if !series.verify_series_meta() {
             println!("Series meta mismatch, creating new one...");
             let series = Series::new(series_path.to_owned());
