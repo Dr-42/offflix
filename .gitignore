@@ -5,3 +5,4 @@ root.conf
 /meta
 *.mp4
 *.mkv
+/flatpak
