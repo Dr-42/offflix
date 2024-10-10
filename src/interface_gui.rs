@@ -18,7 +18,6 @@ use indexmap::IndexMap;
 
 pub struct SeriesImages {
     pub name: String,
-    pub path: String,
     pub banner: PathBuf,
     pub block: PathBuf,
     pub banner_image: Option<RetainedImage>,

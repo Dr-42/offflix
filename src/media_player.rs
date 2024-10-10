@@ -7,7 +7,23 @@ use std::{
 
 use crate::key_controls::set_keybindings;
 
-pub fn run(path: String, resume_time: f64) -> (bool, f64) {
+pub struct PlayerState {
+    pub finished: bool,
+    pub resume_time: f64,
+    pub was_fullscreen: bool,
+}
+
+impl PlayerState {
+    pub fn new(finished: bool, resume_time: f64, was_fullscreen: bool) -> PlayerState {
+        PlayerState {
+            finished,
+            resume_time,
+            was_fullscreen,
+        }
+    }
+}
+
+pub fn run(path: String, resume_time: f64, fullscreen: bool) -> PlayerState {
     let protocol = unsafe {
         Protocol::new(
             "filereader".into(),
@@ -46,8 +62,11 @@ pub fn run(path: String, resume_time: f64) -> (bool, f64) {
         }
     }
     mpv.set_property("osc", true).unwrap();
-    let (finished, time) = super::key_controls::handle_window_events(&mpv);
-    (finished, time)
+
+    if fullscreen {
+        mpv.set_property("fullscreen", true).unwrap();
+    }
+    super::key_controls::handle_window_events(&mpv)
 }
 
 fn open(_: &mut (), uri: &str) -> File {
@@ -78,4 +97,3 @@ fn seek(cookie: &mut File, offset: i64) -> i64 {
 fn size(cookie: &mut File) -> i64 {
     cookie.metadata().unwrap().len() as _
 }
-

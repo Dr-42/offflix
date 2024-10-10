@@ -33,17 +33,16 @@ pub fn loading_ui(
         for series in series_list {
             let series_image = SeriesImages {
                 name: series.0.clone(),
-                path: series.1.clone(),
                 block: interface_data
                     .images_path
                     .join("blocks")
-                    .join(&format!("{}0", series.0.clone()))
+                    .join(format!("{}0", series.0.clone()))
                     .with_extension("jpg"),
                 //block: format!("images/{}/{}0.jpg", "blocks", series.0.as_str()),
                 banner: interface_data
                     .images_path
                     .join("banners")
-                    .join(&format!("{}0", series.0.clone()))
+                    .join(format!("{}0", series.0.clone()))
                     .with_extension("jpg"),
                 //banner: format!("images/{}/{}0.jpg", "banners", series.0.as_str()),
                 block_image: None,

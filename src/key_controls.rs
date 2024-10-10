@@ -1,3 +1,5 @@
+use crate::media_player::PlayerState;
+
 pub fn set_keybindings(mpv: &libmpv::Mpv) {
     mpv.command("keybind", &["\"ESC\" \"quit\""]).unwrap();
     mpv.command("keybind", &["\"SPACE\" \"cycle pause\""])
@@ -33,8 +35,9 @@ pub fn set_keybindings(mpv: &libmpv::Mpv) {
         .unwrap();
 }
 
-pub fn handle_window_events(mpv: &libmpv::Mpv) -> (bool, f64) {
+pub fn handle_window_events(mpv: &libmpv::Mpv) -> PlayerState {
     let mut prev_time = 0.0;
+    let mut was_fullscreen = false;
     let mut event_context = mpv.create_event_context();
     event_context
         .enable_event(libmpv::events::mpv_event_id::Shutdown)
@@ -42,14 +45,16 @@ pub fn handle_window_events(mpv: &libmpv::Mpv) -> (bool, f64) {
 
     loop {
         if let Some(Ok(libmpv::events::Event::Shutdown)) = event_context.wait_event(0.0) {
-            return (false, prev_time);
+            return PlayerState::new(false, prev_time, was_fullscreen);
         }
 
         prev_time = mpv.get_property("time-pos").unwrap_or(prev_time);
+        was_fullscreen = mpv.get_property("fullscreen").unwrap_or(was_fullscreen);
+
         //if media player is closed, return the time
         let end_result = mpv.get_property("eof-reached").unwrap_or(false);
         if end_result {
-            return (true, 0.0);
+            return PlayerState::new(true, 0.0, was_fullscreen);
         };
     }
 }

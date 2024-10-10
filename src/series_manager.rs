@@ -14,6 +14,7 @@ pub struct Series {
     pub season_watching: u64,
     pub last_watched: u64,
     pub time_watched: f64,
+    pub was_fullscreen: bool,
     pub series_image: Option<String>,
 }
 
@@ -72,6 +73,7 @@ impl Series {
             season_watching: 0,
             last_watched: 0,
             time_watched: 0.,
+            was_fullscreen: false,
             series_image: None,
         }
     }
@@ -110,8 +112,11 @@ impl Series {
 
     pub fn resume_series(&mut self, meta_path: &PathBuf) {
         let episode_path = self.get_episode_path(self.season_watching, self.last_watched);
-        let (finished, time) = super::media_player::run(episode_path, self.time_watched);
-        self.time_watched = time;
+        let player_state =
+            super::media_player::run(episode_path, self.time_watched, self.was_fullscreen);
+        self.time_watched = player_state.resume_time;
+        self.was_fullscreen = player_state.was_fullscreen;
+        let finished = player_state.finished;
         if finished {
             self.next_episode(meta_path);
         } else {
@@ -138,8 +143,10 @@ impl Series {
         }
         self.seasons[self.season_watching as usize].episodes[self.last_watched as usize]
             .times_watched += 1;
-        let (finished, time) = super::media_player::run(episode_path, 0.);
-        self.time_watched = time;
+        let player_state = super::media_player::run(episode_path, 0., self.was_fullscreen);
+        self.time_watched = player_state.resume_time;
+        self.was_fullscreen = player_state.was_fullscreen;
+        let finished = player_state.finished;
         if finished {
             self.next_episode(meta_path)
         } else {
@@ -161,8 +168,10 @@ impl Series {
         self.last_watched = episode;
         self.seasons[season as usize].episodes[episode as usize].times_watched += 1;
         let episode_path = self.get_episode_path(season, episode);
-        let (finished, time) = super::media_player::run(episode_path, 0.);
-        self.time_watched = time;
+        let player_state = super::media_player::run(episode_path, 0., self.was_fullscreen);
+        self.time_watched = player_state.resume_time;
+        self.was_fullscreen = player_state.was_fullscreen;
+        let finished = player_state.finished;
         if finished {
             self.next_episode(meta_path);
         } else {
@@ -201,8 +210,10 @@ impl Series {
         self.seasons[season as usize].episodes[episode as usize].times_watched += 1;
         let episode_path = self.get_episode_path(season, episode);
         println!("Num least watched: {}", least_watched.len());
-        let (finished, time) = super::media_player::run(episode_path, 0.);
-        self.time_watched = time;
+        let player_state = super::media_player::run(episode_path, 0., self.was_fullscreen);
+        self.time_watched = player_state.resume_time;
+        self.was_fullscreen = player_state.was_fullscreen;
+        let finished = player_state.finished;
         if finished {
             self.next_episode(meta_path);
         } else {
