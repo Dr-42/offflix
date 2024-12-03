@@ -26,7 +26,7 @@ fn unpack(mut body: String) -> Option<Vec<String>> {
 }
 
 fn build_url(arg: String, img_type: ImageType) -> String {
-    let arg = arg + " Anime TV Series Cover Art";
+    let arg = arg + " Anime/Series Cover Art";
     let arg = arg.replace(' ', "+");
     match img_type {
         ImageType::Block => {
@@ -102,6 +102,11 @@ pub fn download(query: &str, path_prefix: &str, img_type: ImageType) {
                     let path = format!("{}.jpg", path_prefix);
                     let content = futures::executor::block_on(body.body_bytes()).unwrap();
                     if content.is_empty() {
+                        continue;
+                    }
+                    // Check if the image is valid
+                    let img = image::load_from_memory(&content);
+                    if img.is_err() {
                         continue;
                     }
                     std::fs::write(path, content).unwrap();
