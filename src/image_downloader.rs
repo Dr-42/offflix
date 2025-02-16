@@ -26,7 +26,7 @@ fn unpack(mut body: String) -> Option<Vec<String>> {
 }
 
 fn build_url(arg: String, img_type: ImageType) -> String {
-    let arg = arg + " Anime/Series Cover Art";
+    let arg = arg + " tmdb poster";
     let arg = arg.replace(' ', "+");
     match img_type {
         ImageType::Block => {

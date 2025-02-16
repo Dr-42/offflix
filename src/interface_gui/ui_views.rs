@@ -241,11 +241,13 @@ pub fn series_view(
         })
         .collect::<Vec<&SeriesImages>>();
 
-    let filtered_series = if filtered_series.is_empty() {
+    let mut filtered_series = if filtered_series.is_empty() {
         interface_data.images.iter().collect::<Vec<&SeriesImages>>()
     } else {
         filtered_series
     };
+
+    filtered_series.sort_by(|a, b| a.name.cmp(&b.name));
 
     ui.allocate_ui_at_rect(series_view_data.scroll_area_rect, |ui| {
         egui::ScrollArea::vertical().show_viewport(ui, |ui, _rect| {
