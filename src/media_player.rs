@@ -3,6 +3,7 @@ use std::{
     fs::File,
     io::{Read, Seek, SeekFrom},
     mem,
+    path::Path,
 };
 
 use crate::key_controls::set_keybindings;
@@ -42,7 +43,7 @@ pub fn run(path: String, resume_time: f64, fullscreen: bool) -> PlayerState {
     proto_ctx.register(protocol).unwrap();
 
     match mpv.playlist_load_files(&[(&path, FileState::AppendPlay, None)]) {
-        Ok(_) => println!("File loaded successfully"),
+        Ok(_) => println!("File {} loaded successfully", path),
         Err(e) => println!("Error loading file: {}", e),
     }
 
@@ -66,7 +67,7 @@ pub fn run(path: String, resume_time: f64, fullscreen: bool) -> PlayerState {
     if fullscreen {
         mpv.set_property("fullscreen", true).unwrap();
     }
-    super::key_controls::handle_window_events(&mpv)
+    super::key_controls::handle_window_events(&mpv, Path::new(&path))
 }
 
 fn open(_: &mut (), uri: &str) -> File {

@@ -1,4 +1,5 @@
 use crate::media_player::PlayerState;
+use std::path::Path;
 
 pub fn set_keybindings(mpv: &libmpv::Mpv) {
     mpv.command("keybind", &["\"ESC\" \"quit\""]).unwrap();
@@ -35,7 +36,7 @@ pub fn set_keybindings(mpv: &libmpv::Mpv) {
         .unwrap();
 }
 
-pub fn handle_window_events(mpv: &libmpv::Mpv) -> PlayerState {
+pub fn handle_window_events(mpv: &libmpv::Mpv, file_path: &Path) -> PlayerState {
     let mut prev_time = 0.0;
     let mut was_fullscreen = false;
     let mut event_context = mpv.create_event_context();
@@ -44,8 +45,15 @@ pub fn handle_window_events(mpv: &libmpv::Mpv) -> PlayerState {
         .unwrap();
 
     loop {
-        if let Some(Ok(libmpv::events::Event::Shutdown)) = event_context.wait_event(0.0) {
-            return PlayerState::new(false, prev_time, was_fullscreen);
+        let event = event_context.wait_event(0.0);
+        match event {
+            Some(Ok(libmpv::events::Event::Shutdown)) => {
+                return PlayerState::new(false, prev_time, was_fullscreen);
+            }
+            Some(Ok(libmpv::events::Event::EndFile(_))) => {
+                return PlayerState::new(false, prev_time, was_fullscreen);
+            }
+            _ => {}
         }
 
         prev_time = mpv.get_property("time-pos").unwrap_or(prev_time);
@@ -54,7 +62,12 @@ pub fn handle_window_events(mpv: &libmpv::Mpv) -> PlayerState {
         //if media player is closed, return the time
         let end_result = mpv.get_property("eof-reached").unwrap_or(false);
         if end_result {
-            return PlayerState::new(true, 0.0, was_fullscreen);
+            // Check if the file truly ended or the file is no longer accessible
+            if !file_path.exists() {
+                return PlayerState::new(false, prev_time, was_fullscreen);
+            } else {
+                return PlayerState::new(true, 0.0, was_fullscreen);
+            }
         };
     }
 }
