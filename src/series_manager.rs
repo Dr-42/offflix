@@ -215,7 +215,7 @@ impl Series {
         self.was_fullscreen = player_state.was_fullscreen;
         let finished = player_state.finished;
         if finished {
-            self.next_episode(meta_path);
+            self.play_random_episode(meta_path);
         } else {
             self.save_series(meta_path);
         }
