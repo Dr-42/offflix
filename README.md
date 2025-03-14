@@ -27,6 +27,8 @@ export MPV_SOURCE=$(pwd)/mpv
 cargo install offflix
 ```
 
+Prebuilt binaries for linux can be found on [releases](https://github.com/spandan/offflix/releases).
+
 ### Media player controls
 
 - 'Space' to pause/resume
