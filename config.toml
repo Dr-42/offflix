@@ -1,0 +1,2 @@
+[env]
+MPV_SOURCE = "${PWD}/deps/mpv"
