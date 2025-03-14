@@ -21,3 +21,8 @@ directories = "5.0.1"
 rfd = "0.14.1"
 surf = "2.3.2"
 futures = "0.3.30"
+
+# The profile that 'dist' will build with
+[profile.dist]
+inherits = "release"
+lto = "thin"
