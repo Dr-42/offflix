@@ -2663,7 +2663,7 @@ dependencies = [
 
 [[package]]
 name = "offflix"
-version = "1.2.8"
+version = "1.2.9"
 dependencies = [
  "directories",
  "eframe",

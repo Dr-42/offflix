@@ -15,6 +15,7 @@ pub struct Series {
     pub last_watched: u64,
     pub time_watched: f64,
     pub was_fullscreen: bool,
+    pub was_random_watching: bool,
     pub series_image: Option<String>,
 }
 
@@ -74,6 +75,7 @@ impl Series {
             last_watched: 0,
             time_watched: 0.,
             was_fullscreen: false,
+            was_random_watching: false,
             series_image: None,
         }
     }
@@ -118,13 +120,18 @@ impl Series {
         self.was_fullscreen = player_state.was_fullscreen;
         let finished = player_state.finished;
         if finished {
-            self.next_episode(meta_path);
+            if self.was_random_watching {
+                self.play_random_episode(meta_path);
+            } else {
+                self.next_episode(meta_path);
+            }
         } else {
             self.save_series(meta_path);
         }
     }
 
     pub fn next_episode(&mut self, meta_path: &PathBuf) -> bool {
+        self.was_random_watching = false;
         let episode_path;
         if self.last_watched + 1
             == self.seasons[self.season_watching as usize].episodes.len() as u64
@@ -156,6 +163,7 @@ impl Series {
     }
 
     pub fn watch_episode(&mut self, season: u64, episode: u64, meta_path: &PathBuf) {
+        self.was_random_watching = false;
         if season > self.seasons.len() as u64 {
             println!("Season {} does not exist", season);
             return;
@@ -180,10 +188,7 @@ impl Series {
     }
 
     pub fn play_random_episode(&mut self, meta_path: &PathBuf) {
-        /*
-        let season = rand::thread_rng().gen_range(0 .. self.seasons.len());
-        let episode = rand::thread_rng().gen_range(0 .. self.seasons[season].episodes.len());
-        */
+        self.was_random_watching = true;
         let mut least_num: u64 = u64::MAX;
         let mut least_watched: Vec<(u64, u64)> = Vec::new();
 
