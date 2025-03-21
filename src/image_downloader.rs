@@ -26,21 +26,18 @@ fn unpack(mut body: String) -> Option<Vec<String>> {
 }
 
 fn build_url(arg: String, img_type: ImageType) -> String {
-    let arg = arg + " tmdb poster";
+    let arg = arg + " official poster";
     let arg = arg.replace(' ', "+");
+    let filter = "isz:l&itp:photo";
     match img_type {
-        ImageType::Block => {
-            format!(
-                "https://www.google.com/search?as_st=y&as_q={}&as_epq=&as_oq=&as_eq=&imgar=s&imgcolor=&imgtype=photo&cr=&as_sitesearch=&as_filetype=jpg&tbs=&udm=2",
-                arg
-            )
-        }
-        ImageType::Banner => {
-            format!(
-                "https://www.google.com/search?as_st=y&as_q={}&as_epq=&as_oq=&as_eq=&imgar=w&imgcolor=&imgtype=photo&cr=&as_sitesearch=&as_filetype=jpg&tbs=&udm=2",
-                arg
-            )
-        }
+        ImageType::Block => format!(
+            "https://www.google.com/search?tbm=isch&q={}&tbs={}&as_sitesearch=themoviedb.org",
+            arg, filter
+        ),
+        ImageType::Banner => format!(
+            "https://www.google.com/search?tbm=isch&q={}&tbs={}&as_sitesearch=imdb.com",
+            arg, filter
+        ),
     }
 }
 
